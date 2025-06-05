@@ -189,6 +189,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="mb-0">⚠️ Risk Analysis</h2><p class="text-muted mb-0">Key risk and profitability metrics from your trading history.</p></div></div>
             <div class="advanced-metrics mb-4"><div class="metric-card"><div class="metric-value" id="profitFactorMetricValue">0.00</div><div class="metric-label">Profit Factor</div><div class="metric-change positive" id="profitFactorDesc">(Gross Wins / Gross Losses)</div></div><div class="metric-card"><div class="metric-value" id="expectancyMetricValue">€0.00</div><div class="metric-label">Expectancy per Trade</div><div class="metric-change neutral" id="expectancyDesc">(Avg Net Gain/Loss)</div></div><div class="metric-card"><div class="metric-value" id="avgPayoffRatioMetricValue">0.00</div><div class="metric-label">Avg. Payoff Ratio</div><div class="metric-change positive" id="avgPayoffRatioDesc">(Avg Win / Avg Loss)</div></div><div class="metric-card"><div class="metric-value" id="avgRiskRewardMetricValue">0.00</div><div class="metric-label">Avg. R/R per Trade</div><div class="metric-change neutral" id="avgRiskRewardDesc">(Avg Result / Avg Invest)</div></div></div>
             <div class="advanced-metrics mb-4"><div class="metric-card"><div class="metric-value" id="totalNetProfitMetric">€0.00</div><div class="metric-label">Total Net Profit</div></div><div class="metric-card"><div class="metric-value positive" id="avgWinAmountMetric">€0.00</div><div class="metric-label">Average Win Amount</div></div><div class="metric-card"><div class="metric-value negative" id="avgLossAmountMetric">€0.00</div><div class="metric-label">Average Loss Amount</div></div><div class="metric-card"><div class="metric-value" id="winRateMetric">0%</div><div class="metric-label">Win Rate</div></div></div>
+            <div class="card card-enhanced mb-4" id="walletRiskCard"><div class="card-header card-header-enhanced d-flex justify-content-between align-items-center"><h5 class="mb-0">Wallet Risk</h5><button class="btn btn-sm btn-info btn-enhanced" id="refreshWalletRiskBtn">Refresh</button></div><div class="card-body"><div class="row text-center mb-3"><div class="col-md-3"><strong>Portfolio Value:</strong> <span id="walletPortfolioValue">€0.00</span></div><div class="col-md-3"><strong>Open Exposure:</strong> <span id="walletOpenExposure">€0.00</span></div><div class="col-md-3"><strong>Exposure %:</strong> <span id="walletExposurePercent">0%</span></div><div class="col-md-3"><strong>Max Risk/Op:</strong> <span id="walletMaxRiskPerOp">€0.00</span></div></div><div class="form-group mb-0"><label for="potentialTradeRisk">Potential Trade Risk (€)</label><input type="number" class="form-control" id="potentialTradeRisk" min="0" step="0.01"><small id="tradeRiskFeedback" class="form-text"></small></div></div></div>
             <div class="row mb-4"><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Investment Concentration by Asset Type</h5></div><div class="card-body"><div class="chart-container" style="height: 300px;"><canvas id="investmentByAssetTypeChart"></canvas></div></div></div></div><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Portfolio Drawdown Timeline (%)</h5></div><div class="card-body"><div class="chart-container" style="height: 300px;"><canvas id="drawdownTimelineChart"></canvas></div></div></div></div></div>
             <div id="noRiskDataMessage" class="alert alert-info" style="display:none;">Not enough data to display risk analytics or concentration charts.</div>
         </div>
@@ -297,9 +298,10 @@
                 if (userDefinedStrategies.length > 0) populateAnalyticsStrategyFilter();
                 if (userDefinedAssetTypes.length > 0) populateAnalyticsAssetTypeFilter();
                 fetchAndRenderAnalytics(currentAnalyticsFilters); 
-            } else if (viewId === 'riskView') { 
-                fetchAndRenderRiskData(); 
-            } else if (viewId === 'settingsView') { 
+            } else if (viewId === 'riskView') {
+                fetchAndRenderRiskData();
+                fetchAndDisplayWalletRisk();
+            } else if (viewId === 'settingsView') {
                 loadAndDisplayStrategies(); 
                 loadAndDisplayAssetTypes(); 
             } else if (viewId === 'forecastingView') { 
@@ -601,6 +603,24 @@
             if(tradeDateInEl) {
                 tradeDateInEl.valueAsDate = new Date();
             }
+
+            const potentialTradeRiskEl = document.getElementById('potentialTradeRisk');
+            const tradeRiskFeedbackEl = document.getElementById('tradeRiskFeedback');
+            if(potentialTradeRiskEl){
+                potentialTradeRiskEl.addEventListener('input',()=>{
+                    const max=parseFloat(tradeRiskFeedbackEl.dataset.max||0);
+                    const val=parseFloat(potentialTradeRiskEl.value)||0;
+                    if(val<=max){
+                        tradeRiskFeedbackEl.textContent='OK to trade';
+                        tradeRiskFeedbackEl.className='form-text text-success';
+                    }else{
+                        tradeRiskFeedbackEl.textContent='Risk exceeds allowed limit';
+                        tradeRiskFeedbackEl.className='form-text text-danger';
+                    }
+                });
+            }
+            const refreshWalletRiskBtn=document.getElementById('refreshWalletRiskBtn');
+            if(refreshWalletRiskBtn) refreshWalletRiskBtn.addEventListener('click',fetchAndDisplayWalletRisk);
             const tradeDateOutEl = document.getElementById('tradeDateOut');
             if(tradeDateOutEl) {
                 tradeDateOutEl.value = ''; 
@@ -1575,7 +1595,7 @@
                 }
             });
         }
-        function renderDrawdownTimelineChart(drawdownSeries) { 
+        function renderDrawdownTimelineChart(drawdownSeries) {
             destroyChart(charts.drawdownTimelineChart); 
             const c=document.getElementById('drawdownTimelineChart');
             if(!c)return;
@@ -1623,6 +1643,27 @@
                     }
                 }
             });
+        }
+
+        function fetchAndDisplayWalletRisk() {
+            showLoading();
+            google.script.run
+                .withSuccessHandler(data => {
+                    hideLoading();
+                    if(!data || data.error){
+                        showToast(`Error fetching wallet risk: ${data?data.error:'Unknown'}`,'error');
+                        return;
+                    }
+                    document.getElementById('walletPortfolioValue').textContent = formatCurrency(data.portfolioValue,'EUR');
+                    document.getElementById('walletOpenExposure').textContent = formatCurrency(data.openTradeExposureEUR,'EUR');
+                    document.getElementById('walletExposurePercent').textContent = formatPercentage(data.exposurePercent);
+                    const maxRisk = data.portfolioValue * (data.lossPerFailedOpPercent || 0);
+                    document.getElementById('walletMaxRiskPerOp').textContent = formatCurrency(maxRisk,'EUR');
+                    const feedbackEl = document.getElementById('tradeRiskFeedback');
+                    if(feedbackEl) feedbackEl.dataset.max = String(maxRisk);
+                })
+                .withFailureHandler(e=>{ hideLoading(); showToast(`Failed wallet risk: ${e.message}`,'error'); })
+                .getWalletRiskSummary();
         }
 
         // --- AI INSIGHTS TAB ---
@@ -2239,7 +2280,8 @@
         window.submitTradeUpdate = submitTradeUpdate;
         window.deleteTradeClicked = deleteTradeClicked;
         window.loadUserGoalsAndPopulateForm = loadUserGoalsAndPopulateForm;
-    })(); 
+        window.fetchAndDisplayWalletRisk = fetchAndDisplayWalletRisk;
+    })();
     </script>
 </body>
 </html>

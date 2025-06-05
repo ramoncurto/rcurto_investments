@@ -20,7 +20,7 @@ const PRICE_RANGES_ANALYTICS = [
   { label: "5-9.99", min: 5, max: 9.9999 }, { label: "10-14.99", min: 10, max: 14.9999 },
   { label: "15-19.99", min: 15, max: 19.9999 }, { label: "20-49.99", min: 20, max: 49.9999 },
   { label: "50-99.99", min: 50, max: 99.9999 }, { label: "100-199.99", min: 100, max: 199.9999 },
-  { label: "200-499.99", min: 200, max: 499.9999 }, { label: ">500", min: 500.0001, max: Infinity }
+  { label: "200-499.99", min: 200, max: 499.9999 }, { label: ">500", min: 500, max: Infinity }
 ];
 
 // --- User Properties Keys ---
@@ -96,7 +96,8 @@ function callGPT(task, payload, maxTokens) {
 // --- CLIENT-CALLABLE ENDPOINTS (Data Retrieval & Manipulation) ---
 
 /**
- * Gets the sheet headers. Relies on getSheetHeadersArray() from ConstructUtils.gs
+ * Gets the sheet headers.
+ * Requires a project-defined function `getSheetHeadersArray()` that returns an array of column names.
  */
 function getHeadersForClient() {
   try {
@@ -698,6 +699,26 @@ function getUserDefinedAssetTypes() { try { const s = USER_PROPERTIES.getPropert
 function saveUserDefinedAssetTypes(assetTypesArray) { try { USER_PROPERTIES.setProperty(USER_ASSET_TYPES_KEY, JSON.stringify(assetTypesArray)); return true; } catch (e) { return false; }}
 function addAssetTypeDefinition(assetTypeName) { if (!assetTypeName || String(assetTypeName).trim() === "") return { success: false, message: "Name empty." }; const name = String(assetTypeName).trim(); let atListR = getUserDefinedAssetTypes(); if (atListR.error) return { success: false, message: atListR.error }; let atList = atListR; if (atList.some(s => s.toLowerCase() === name.toLowerCase())) return { success: false, message: `Asset type "${name}" already exists.` }; atList.push(name); atList.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase())); return saveUserDefinedAssetTypes(atList) ? { success: true, message: `Asset type "${name}" added.`, assetTypes: atList } : { success: false, message: "Failed to save." }; }
 function deleteAssetTypeDefinition(assetTypeName) { if (!assetTypeName || String(assetTypeName).trim() === "") return { success: false, message: "Name empty." }; const name = String(assetTypeName).trim(); let atListR = getUserDefinedAssetTypes(); if (atListR.error) return { success: false, message: atListR.error }; let atList = atListR; const initialLen = atList.length; atList = atList.filter(s => s.toLowerCase() !== name.toLowerCase()); if (atList.length === initialLen) return { success: false, message: `Asset type "${name}" not found.` }; return saveUserDefinedAssetTypes(atList) ? { success: true, message: `Asset type "${name}" deleted.`, assetTypes: atList } : { success: false, message: "Failed to save." }; }
+
+// --- WALLET RISK SUMMARY ---
+function getWalletRiskSummary() {
+  try {
+    const goals = loadUserGoals();
+    if (goals.error) return { error: goals.error };
+    const tradesResult = getTrades();
+    if (tradesResult.error) return { error: tradesResult.error };
+    const analytics = getAnalyticsData(null);
+    const totalNetPnl = analytics && !analytics.error ? parseFloat(analytics.totalNetProfitEUR) || 0 : 0;
+    const trades = Array.isArray(tradesResult) ? tradesResult : [];
+    const dateOutHeader = "Date Out";
+    const investHeader = "InvestmentEUR";
+    const openExposure = trades.filter(t => !t[dateOutHeader]).reduce((sum,t)=> sum + (parseFloat(t[investHeader])||0),0);
+    const initialCapital = parseFloat(goals.capitalForTrading) || 0;
+    const portfolioValue = initialCapital + totalNetPnl;
+    const exposurePercent = portfolioValue>0 ? openExposure/portfolioValue : 0;
+    return { success:true, portfolioValue, openTradeExposureEUR: openExposure, exposurePercent, lossPerFailedOpPercent: parseFloat(goals.lossPerFailedOpPercent)||0 };
+  } catch(e) { return { error: `Error calculating wallet risk: ${e.message}` }; }
+}
 
 /**
  * Returns the canonical headers for the CSV template.
