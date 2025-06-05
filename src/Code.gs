@@ -7,6 +7,7 @@ const DATE_HEADERS_CONFIG = ["Date In", "Date Out"];
 
 // ⚠️ CRUCIAL: Verify this SHEET_NAME matches your Google Sheet tab name exactly (case-sensitive).
 const SHEET_NAME = "Trades"; // As per your last provided code.gs snippet. Double-check this!
+const TRADE_LOG_SHEET = "TradeInteractions"; // Sheet to record add/update/delete actions
 
 // --- GPT Configuration ---
 const GPT_MODEL = 'gpt-4.1-nano'; // As per your request
@@ -226,7 +227,8 @@ function addTrade(tradeData) {
     });
 
     sheet.appendRow(newRow);
-    SpreadsheetApp.flush(); 
+    SpreadsheetApp.flush();
+    logTradeAction('ADD', tradeData);
     return { success: true, message: "Operació afegida amb ID: " + nextId, newId: nextId, addedTrade: tradeData };
   } catch (error) { Logger.log(`Error a addTrade: ${error.toString()}\nStack: ${error.stack}`); return { success: false, message: `Error afegint operació: ${error.message}` }; }
 }
@@ -277,6 +279,7 @@ function updateTrade(tradeDataWithId) {
 
     sheet.getRange(rowIndexToUpdate, 1, 1, headers.length).setValues([updatedRowValues]);
     SpreadsheetApp.flush();
+    logTradeAction('UPDATE', processedTradeData);
     return { success: true, message: `Trade ID ${tradeIdToUpdate} updated.` };
   } catch (error) { Logger.log(`Error a updateTrade: ${error.toString()}\nStack: ${error.stack}`); return { success: false, message: `Error actualitzant operació: ${error.message}` }; }
 }
@@ -312,7 +315,14 @@ function bulkDeleteTrades(tradeIdsArray) {
     
     rowsToDeleteSheetNumbers.sort((a, b) => b - a); 
     let deletedCount = 0;
-    rowsToDeleteSheetNumbers.forEach(rowIndex => { try { sheet.deleteRow(rowIndex); deletedCount++; } catch (e) { Logger.log(`Failed to delete row ${rowIndex}: ${e}`); }});
+    rowsToDeleteSheetNumbers.forEach(rowIndex => {
+      try {
+        const idVal = sheet.getRange(rowIndex, idColumnIndex + 1).getValue();
+        sheet.deleteRow(rowIndex);
+        deletedCount++;
+        logTradeAction('DELETE', { ID: idVal });
+      } catch (e) { Logger.log(`Failed to delete row ${rowIndex}: ${e}`); }
+    });
     SpreadsheetApp.flush();
     return { success: true, message: `${deletedCount} of ${idsToDeleteNumeric.length} selected trades deleted.`, deletedCount };
   } catch (error) { Logger.log(`Error in bulkDeleteTrades: ${error.toString()}\nStack: ${error.stack}`); return { success: false, message: `Error during bulk deletion: ${error.message}`, deletedCount: 0 }; }
@@ -795,4 +805,24 @@ function computeDerivedTradeMetrics(trade) {
     } catch (err) {
         Logger.log('Error computing derived metrics: ' + err);
     }
+}
+
+function logTradeAction(action, trade) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(TRADE_LOG_SHEET);
+    if (!sheet) {
+      sheet = ss.insertSheet(TRADE_LOG_SHEET);
+      sheet.appendRow(["Timestamp", "Action", "TradeID", "Symbol", "Details"]);
+    }
+    const tradeId = trade && trade.ID !== undefined ? trade.ID : '';
+    let symbol = '';
+    try {
+      const symHeader = getSheetHeadersArray().find(h => h.toUpperCase() === 'SYMBOL') || 'SYMBOL';
+      symbol = trade && trade[symHeader] ? trade[symHeader] : '';
+    } catch(e){ /* ignore header errors */ }
+    sheet.appendRow([new Date(), action, tradeId, symbol, JSON.stringify(trade)]);
+  } catch(err) {
+    Logger.log('Failed to log trade action: ' + err);
+  }
 }
