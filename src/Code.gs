@@ -154,9 +154,10 @@ function getTrades() {
           trade[header] = cellValue; 
         }
       });
+      computeDerivedTradeMetrics(trade);
       return trade;
     });
-    Logger.log("getTrades: Processed " + trades.length + " trades."); 
+    Logger.log("getTrades: Processed " + trades.length + " trades.");
     return trades;
   } catch (error) {
     Logger.log(`Error CRÍTIC a getTrades: ${error.toString()}\nStack: ${error.stack}`); 
@@ -188,11 +189,11 @@ function addTrade(tradeData) {
         const ids = sheet.getRange(2, idColumnIndex, sheet.getLastRow() - 1, 1).getValues().flat().map(id => parseInt(id)).filter(id => !isNaN(id)); 
         if (ids.length > 0) nextId = Math.max(...ids) + 1; 
     } 
-    tradeData[idColumnName] = nextId; 
+    tradeData[idColumnName] = nextId;
 
-    DATE_HEADERS_CONFIG.forEach(dateHeader => { 
+    DATE_HEADERS_CONFIG.forEach(dateHeader => {
         if (tradeData[dateHeader] && typeof tradeData[dateHeader] === 'string') {
-            const dateParts = tradeData[dateHeader].split('-'); 
+            const dateParts = tradeData[dateHeader].split('-');
             if (dateParts.length === 3) {
                 const parsedDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
                 tradeData[dateHeader] = !isNaN(parsedDate) ? parsedDate : null;
@@ -206,10 +207,12 @@ function addTrade(tradeData) {
         }
     });
 
-    const newRow = headers.map(header => { 
-        let value = tradeData[header]; 
-        if (value === undefined || value === null || String(value).trim() === "") { 
-            return (DATE_HEADERS_CONFIG.includes(header) && value === null) ? null : ""; 
+    computeDerivedTradeMetrics(tradeData);
+
+    const newRow = headers.map(header => {
+        let value = tradeData[header];
+        if (value === undefined || value === null || String(value).trim() === "") {
+            return (DATE_HEADERS_CONFIG.includes(header) && value === null) ? null : "";
         }
         if (NUMERIC_HEADERS_CONFIG.includes(header)) { 
             const numVal = parseFloat(String(value).replace(',', '.')); 
@@ -251,7 +254,7 @@ function updateTrade(tradeDataWithId) {
     if (rowIndexToUpdate === -1) return { success: false, message: `Trade ID ${tradeIdToUpdate} not found.` };
 
     const processedTradeData = { ...tradeDataWithId };
-    DATE_HEADERS_CONFIG.forEach(dateHeader => { 
+    DATE_HEADERS_CONFIG.forEach(dateHeader => {
         if (processedTradeData[dateHeader] && typeof processedTradeData[dateHeader] === 'string') {
             const dateParts = processedTradeData[dateHeader].split('-');
             if (dateParts.length === 3) {
@@ -260,10 +263,12 @@ function updateTrade(tradeDataWithId) {
             } else { processedTradeData[dateHeader] = null; }
           } else if (processedTradeData[dateHeader] instanceof Date && isNaN(processedTradeData[dateHeader].getTime())) {
             processedTradeData[dateHeader] = null;
-          }
+        }
     });
-    const updatedRowValues = headers.map(header => { 
-        let value = processedTradeData[header]; 
+
+    computeDerivedTradeMetrics(processedTradeData);
+    const updatedRowValues = headers.map(header => {
+        let value = processedTradeData[header];
         if (value === undefined || value === null || String(value).trim() === "") { return (DATE_HEADERS_CONFIG.includes(header) && value === null) ? null : ""; }
         if (NUMERIC_HEADERS_CONFIG.includes(header)) { const numVal = parseFloat(String(value).replace(',', '.')); return isNaN(numVal) ? "" : numVal; }
         if (PERCENT_HEADERS_CONFIG.includes(header)) { const percVal = parseFloat(String(value)); return isNaN(percVal) ? "" : percVal; }
@@ -743,4 +748,51 @@ function generateEmptyTakeaways() {
         pnlByMonthCategory: "Not enough data for analysis.", winRateByMonthCategory: "Not enough data for analysis.",
         pnlByTopSymbols: "Not enough data for analysis.", performanceByPrice: "Not enough data for analysis."
     };
+}
+
+function computeDerivedTradeMetrics(trade) {
+    try {
+        const parse = v => parseFloat(String(v).replace(',', '.'));
+        const shares = parse(trade.SHARES) || 0;
+        const callPrice = parse(trade.CallPriceUSD) || 0;
+        const putPrice = parse(trade.PutPriceUSD) || 0;
+        const dollarEx = parse(trade.DollarExchangeRate);
+        const euroEx = parse(trade.EuroExchangeRate);
+        const brokerFees = parse(trade.BrokerFeesEUR) || 0;
+
+        if (!trade.InvestmentUSD && shares && callPrice) {
+            trade.InvestmentUSD = shares * callPrice;
+        }
+        if (!trade.InvestmentEUR) {
+            if (!isNaN(dollarEx) && trade.InvestmentUSD) {
+                trade.InvestmentEUR = trade.InvestmentUSD / dollarEx;
+            } else if (shares && callPrice) {
+                trade.InvestmentEUR = shares * callPrice;
+            }
+        }
+
+        const profitLossUSD = (putPrice - callPrice) * shares;
+        trade.ProfitLossUSD = profitLossUSD;
+
+        if (trade.InvestmentEUR) {
+            trade.ProfitLossPercent = profitLossUSD / trade.InvestmentEUR;
+        } else {
+            trade.ProfitLossPercent = 0;
+        }
+
+        let profitLossEUR = profitLossUSD;
+        if (!isNaN(euroEx) && euroEx !== 0) {
+            profitLossEUR = profitLossUSD / euroEx;
+        }
+
+        trade.ResultEUR = profitLossEUR + brokerFees;
+        if (trade.InvestmentEUR) {
+            trade.ResultPercent = trade.ResultEUR / trade.InvestmentEUR;
+        } else {
+            trade.ResultPercent = 0;
+        }
+
+    } catch (err) {
+        Logger.log('Error computing derived metrics: ' + err);
+    }
 }
