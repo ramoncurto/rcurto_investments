@@ -20,7 +20,7 @@ const PRICE_RANGES_ANALYTICS = [
   { label: "5-9.99", min: 5, max: 9.9999 }, { label: "10-14.99", min: 10, max: 14.9999 },
   { label: "15-19.99", min: 15, max: 19.9999 }, { label: "20-49.99", min: 20, max: 49.9999 },
   { label: "50-99.99", min: 50, max: 99.9999 }, { label: "100-199.99", min: 100, max: 199.9999 },
-  { label: "200-499.99", min: 200, max: 499.9999 }, { label: ">500", min: 500.0001, max: Infinity }
+  { label: "200-499.99", min: 200, max: 499.9999 }, { label: ">500", min: 500, max: Infinity }
 ];
 
 // --- User Properties Keys ---

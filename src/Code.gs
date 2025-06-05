@@ -7,6 +7,7 @@ const DATE_HEADERS_CONFIG = ["Date In", "Date Out"];
 
 // ⚠️ CRUCIAL: Verify this SHEET_NAME matches your Google Sheet tab name exactly (case-sensitive).
 const SHEET_NAME = "Trades"; // As per your last provided code.gs snippet. Double-check this!
+const TRADE_LOG_SHEET = "TradeInteractions"; // Sheet to record add/update/delete actions
 
 // --- GPT Configuration ---
 const GPT_MODEL = 'gpt-4.1-nano'; // As per your request
@@ -20,7 +21,7 @@ const PRICE_RANGES_ANALYTICS = [
   { label: "5-9.99", min: 5, max: 9.9999 }, { label: "10-14.99", min: 10, max: 14.9999 },
   { label: "15-19.99", min: 15, max: 19.9999 }, { label: "20-49.99", min: 20, max: 49.9999 },
   { label: "50-99.99", min: 50, max: 99.9999 }, { label: "100-199.99", min: 100, max: 199.9999 },
-  { label: "200-499.99", min: 200, max: 499.9999 }, { label: ">500", min: 500.0001, max: Infinity }
+  { label: "200-499.99", min: 200, max: 499.9999 }, { label: ">500", min: 500, max: Infinity }
 ];
 
 // --- User Properties Keys ---
@@ -96,12 +97,14 @@ function callGPT(task, payload, maxTokens) {
 // --- CLIENT-CALLABLE ENDPOINTS (Data Retrieval & Manipulation) ---
 
 /**
- * Gets the sheet headers. Relies on getSheetHeadersArray() from ConstructUtils.gs
+ * Gets the sheet headers.
+ * Requires a project-defined function `getSheetHeadersArray()` that returns an
+ * array of column names. Ensure this helper exists somewhere in your project.
  */
 function getHeadersForClient() {
   try {
     if (typeof getSheetHeadersArray !== 'function') {
-      Logger.log("Error crític: La funció getSheetHeadersArray no està definida (should be in ConstructUtils.gs).");
+      Logger.log("Error crític: La funció getSheetHeadersArray no està definida (should be defined).");
       throw new Error("La funció getSheetHeadersArray no està definida.");
     }
     return getSheetHeadersArray();
@@ -120,13 +123,13 @@ function getTrades() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (typeof SHEET_NAME === 'undefined') { Logger.log("getTrades: Error - SHEET_NAME undefined."); throw new Error("Constant SHEET_NAME no definida."); }
     const sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) { Logger.log(`getTrades: Error - Sheet "${SHEET_NAME}" NOT found.`); throw new Error(`El full "${SHEET_NAME}" no s'ha trobat. Assegura't que el nom de la pestanya coincideix exactament, incloent majúscules/minúscules i espais. També, comprova que 'ConstructUtils.gs' existeix i 'getSheetHeadersArray' està definit correctament.`); }
+    if (!sheet) { Logger.log(`getTrades: Error - Sheet "${SHEET_NAME}" NOT found.`); throw new Error(`El full "${SHEET_NAME}" no s'ha trobat. Assegura't que el nom de la pestanya coincideix exactament, incloent majúscules/minúscules i espais. També, comprova que 'getSheetHeadersArray' està definit correctament.`); }
     Logger.log(`getTrades: Successfully found sheet: "${SHEET_NAME}"`);
 
-    if (typeof getSheetHeadersArray !== 'function') { Logger.log("getTrades: Error - getSheetHeadersArray undefined."); throw new Error("La funció getSheetHeadersArray no està definida (hauria d'estar a ConstructUtils.gs)."); }
+    if (typeof getSheetHeadersArray !== 'function') { Logger.log("getTrades: Error - getSheetHeadersArray undefined."); throw new Error("La funció getSheetHeadersArray no està definida ."); }
     const headers = getSheetHeadersArray();
     Logger.log("getTrades: Headers from getSheetHeadersArray(): " + JSON.stringify(headers));
-    if (!headers || headers.length === 0) { Logger.log("getTrades: Error - Headers array empty."); throw new Error("Headers array invàlid o buit. Verifica getSheetHeadersArray() a ConstructUtils.gs."); }
+    if (!headers || headers.length === 0) { Logger.log("getTrades: Error - Headers array empty."); throw new Error("Headers array invàlid o buit. Verifica getSheetHeadersArray()."); }
     
     const lastRow = sheet.getLastRow();
     Logger.log("getTrades: Last row: " + lastRow + ", Headers count: " + headers.length);
@@ -153,9 +156,10 @@ function getTrades() {
           trade[header] = cellValue; 
         }
       });
+      computeDerivedTradeMetrics(trade);
       return trade;
     });
-    Logger.log("getTrades: Processed " + trades.length + " trades."); 
+    Logger.log("getTrades: Processed " + trades.length + " trades.");
     return trades;
   } catch (error) {
     Logger.log(`Error CRÍTIC a getTrades: ${error.toString()}\nStack: ${error.stack}`); 
@@ -187,11 +191,11 @@ function addTrade(tradeData) {
         const ids = sheet.getRange(2, idColumnIndex, sheet.getLastRow() - 1, 1).getValues().flat().map(id => parseInt(id)).filter(id => !isNaN(id)); 
         if (ids.length > 0) nextId = Math.max(...ids) + 1; 
     } 
-    tradeData[idColumnName] = nextId; 
+    tradeData[idColumnName] = nextId;
 
-    DATE_HEADERS_CONFIG.forEach(dateHeader => { 
+    DATE_HEADERS_CONFIG.forEach(dateHeader => {
         if (tradeData[dateHeader] && typeof tradeData[dateHeader] === 'string') {
-            const dateParts = tradeData[dateHeader].split('-'); 
+            const dateParts = tradeData[dateHeader].split('-');
             if (dateParts.length === 3) {
                 const parsedDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
                 tradeData[dateHeader] = !isNaN(parsedDate) ? parsedDate : null;
@@ -205,10 +209,12 @@ function addTrade(tradeData) {
         }
     });
 
-    const newRow = headers.map(header => { 
-        let value = tradeData[header]; 
-        if (value === undefined || value === null || String(value).trim() === "") { 
-            return (DATE_HEADERS_CONFIG.includes(header) && value === null) ? null : ""; 
+    computeDerivedTradeMetrics(tradeData);
+
+    const newRow = headers.map(header => {
+        let value = tradeData[header];
+        if (value === undefined || value === null || String(value).trim() === "") {
+            return (DATE_HEADERS_CONFIG.includes(header) && value === null) ? null : "";
         }
         if (NUMERIC_HEADERS_CONFIG.includes(header)) { 
             const numVal = parseFloat(String(value).replace(',', '.')); 
@@ -222,7 +228,8 @@ function addTrade(tradeData) {
     });
 
     sheet.appendRow(newRow);
-    SpreadsheetApp.flush(); 
+    SpreadsheetApp.flush();
+    logTradeAction('ADD', tradeData);
     return { success: true, message: "Operació afegida amb ID: " + nextId, newId: nextId, addedTrade: tradeData };
   } catch (error) { Logger.log(`Error a addTrade: ${error.toString()}\nStack: ${error.stack}`); return { success: false, message: `Error afegint operació: ${error.message}` }; }
 }
@@ -250,7 +257,7 @@ function updateTrade(tradeDataWithId) {
     if (rowIndexToUpdate === -1) return { success: false, message: `Trade ID ${tradeIdToUpdate} not found.` };
 
     const processedTradeData = { ...tradeDataWithId };
-    DATE_HEADERS_CONFIG.forEach(dateHeader => { 
+    DATE_HEADERS_CONFIG.forEach(dateHeader => {
         if (processedTradeData[dateHeader] && typeof processedTradeData[dateHeader] === 'string') {
             const dateParts = processedTradeData[dateHeader].split('-');
             if (dateParts.length === 3) {
@@ -259,10 +266,12 @@ function updateTrade(tradeDataWithId) {
             } else { processedTradeData[dateHeader] = null; }
           } else if (processedTradeData[dateHeader] instanceof Date && isNaN(processedTradeData[dateHeader].getTime())) {
             processedTradeData[dateHeader] = null;
-          }
+        }
     });
-    const updatedRowValues = headers.map(header => { 
-        let value = processedTradeData[header]; 
+
+    computeDerivedTradeMetrics(processedTradeData);
+    const updatedRowValues = headers.map(header => {
+        let value = processedTradeData[header];
         if (value === undefined || value === null || String(value).trim() === "") { return (DATE_HEADERS_CONFIG.includes(header) && value === null) ? null : ""; }
         if (NUMERIC_HEADERS_CONFIG.includes(header)) { const numVal = parseFloat(String(value).replace(',', '.')); return isNaN(numVal) ? "" : numVal; }
         if (PERCENT_HEADERS_CONFIG.includes(header)) { const percVal = parseFloat(String(value)); return isNaN(percVal) ? "" : percVal; }
@@ -271,6 +280,7 @@ function updateTrade(tradeDataWithId) {
 
     sheet.getRange(rowIndexToUpdate, 1, 1, headers.length).setValues([updatedRowValues]);
     SpreadsheetApp.flush();
+    logTradeAction('UPDATE', processedTradeData);
     return { success: true, message: `Trade ID ${tradeIdToUpdate} updated.` };
   } catch (error) { Logger.log(`Error a updateTrade: ${error.toString()}\nStack: ${error.stack}`); return { success: false, message: `Error actualitzant operació: ${error.message}` }; }
 }
@@ -306,7 +316,14 @@ function bulkDeleteTrades(tradeIdsArray) {
     
     rowsToDeleteSheetNumbers.sort((a, b) => b - a); 
     let deletedCount = 0;
-    rowsToDeleteSheetNumbers.forEach(rowIndex => { try { sheet.deleteRow(rowIndex); deletedCount++; } catch (e) { Logger.log(`Failed to delete row ${rowIndex}: ${e}`); }});
+    rowsToDeleteSheetNumbers.forEach(rowIndex => {
+      try {
+        const idVal = sheet.getRange(rowIndex, idColumnIndex + 1).getValue();
+        sheet.deleteRow(rowIndex);
+        deletedCount++;
+        logTradeAction('DELETE', { ID: idVal });
+      } catch (e) { Logger.log(`Failed to delete row ${rowIndex}: ${e}`); }
+    });
     SpreadsheetApp.flush();
     return { success: true, message: `${deletedCount} of ${idsToDeleteNumeric.length} selected trades deleted.`, deletedCount };
   } catch (error) { Logger.log(`Error in bulkDeleteTrades: ${error.toString()}\nStack: ${error.stack}`); return { success: false, message: `Error during bulk deletion: ${error.message}`, deletedCount: 0 }; }
@@ -699,6 +716,26 @@ function saveUserDefinedAssetTypes(assetTypesArray) { try { USER_PROPERTIES.setP
 function addAssetTypeDefinition(assetTypeName) { if (!assetTypeName || String(assetTypeName).trim() === "") return { success: false, message: "Name empty." }; const name = String(assetTypeName).trim(); let atListR = getUserDefinedAssetTypes(); if (atListR.error) return { success: false, message: atListR.error }; let atList = atListR; if (atList.some(s => s.toLowerCase() === name.toLowerCase())) return { success: false, message: `Asset type "${name}" already exists.` }; atList.push(name); atList.sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase())); return saveUserDefinedAssetTypes(atList) ? { success: true, message: `Asset type "${name}" added.`, assetTypes: atList } : { success: false, message: "Failed to save." }; }
 function deleteAssetTypeDefinition(assetTypeName) { if (!assetTypeName || String(assetTypeName).trim() === "") return { success: false, message: "Name empty." }; const name = String(assetTypeName).trim(); let atListR = getUserDefinedAssetTypes(); if (atListR.error) return { success: false, message: atListR.error }; let atList = atListR; const initialLen = atList.length; atList = atList.filter(s => s.toLowerCase() !== name.toLowerCase()); if (atList.length === initialLen) return { success: false, message: `Asset type "${name}" not found.` }; return saveUserDefinedAssetTypes(atList) ? { success: true, message: `Asset type "${name}" deleted.`, assetTypes: atList } : { success: false, message: "Failed to save." }; }
 
+// --- WALLET RISK SUMMARY ---
+function getWalletRiskSummary() {
+  try {
+    const goals = loadUserGoals();
+    if (goals.error) return { error: goals.error };
+    const tradesResult = getTrades();
+    if (tradesResult.error) return { error: tradesResult.error };
+    const analytics = getAnalyticsData(null);
+    const totalNetPnl = analytics && !analytics.error ? parseFloat(analytics.totalNetProfitEUR) || 0 : 0;
+    const trades = Array.isArray(tradesResult) ? tradesResult : [];
+    const dateOutHeader = "Date Out";
+    const investHeader = "InvestmentEUR";
+    const openExposure = trades.filter(t => !t[dateOutHeader]).reduce((sum,t)=> sum + (parseFloat(t[investHeader])||0),0);
+    const initialCapital = parseFloat(goals.capitalForTrading) || 0;
+    const portfolioValue = initialCapital + totalNetPnl;
+    const exposurePercent = portfolioValue>0 ? openExposure/portfolioValue : 0;
+    return { success:true, portfolioValue, openTradeExposureEUR: openExposure, exposurePercent, lossPerFailedOpPercent: parseFloat(goals.lossPerFailedOpPercent)||0 };
+  } catch(e) { return { error: `Error calculating wallet risk: ${e.message}` }; }
+}
+
 /**
  * Returns the canonical headers for the CSV template.
  */
@@ -722,4 +759,98 @@ function generateEmptyTakeaways() {
         pnlByMonthCategory: "Not enough data for analysis.", winRateByMonthCategory: "Not enough data for analysis.",
         pnlByTopSymbols: "Not enough data for analysis.", performanceByPrice: "Not enough data for analysis."
     };
+}
+
+function computeDerivedTradeMetrics(trade) {
+    try {
+        const parse = v => parseFloat(String(v).replace(',', '.'));
+        const shares = parse(trade.SHARES) || 0;
+        const callPrice = parse(trade.CallPriceUSD) || 0;
+        const putPrice = parse(trade.PutPriceUSD) || 0;
+        const dollarEx = parse(trade.DollarExchangeRate);
+        const euroEx = parse(trade.EuroExchangeRate);
+        const brokerFees = parse(trade.BrokerFeesEUR) || 0;
+
+        if (!trade.InvestmentUSD && shares && callPrice) {
+            trade.InvestmentUSD = shares * callPrice;
+        }
+        if (!trade.InvestmentEUR) {
+            if (!isNaN(dollarEx) && trade.InvestmentUSD) {
+                trade.InvestmentEUR = trade.InvestmentUSD / dollarEx;
+            } else if (shares && callPrice) {
+                trade.InvestmentEUR = shares * callPrice;
+            }
+        }
+
+        const profitLossUSD = (putPrice - callPrice) * shares;
+        trade.ProfitLossUSD = profitLossUSD;
+
+        if (trade.InvestmentEUR) {
+            trade.ProfitLossPercent = profitLossUSD / trade.InvestmentEUR;
+        } else {
+            trade.ProfitLossPercent = 0;
+        }
+
+        let profitLossEUR = profitLossUSD;
+        if (!isNaN(euroEx) && euroEx !== 0) {
+            profitLossEUR = profitLossUSD / euroEx;
+        }
+
+        trade.ResultEUR = profitLossEUR + brokerFees;
+        if (trade.InvestmentEUR) {
+            trade.ResultPercent = trade.ResultEUR / trade.InvestmentEUR;
+        } else {
+            trade.ResultPercent = 0;
+        }
+
+    } catch (err) {
+        Logger.log('Error computing derived metrics: ' + err);
+    }
+}
+
+function logTradeAction(action, trade) {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(TRADE_LOG_SHEET);
+    if (!sheet) {
+      sheet = ss.insertSheet(TRADE_LOG_SHEET);
+      sheet.appendRow(["Timestamp", "Action", "TradeID", "Symbol", "Details"]);
+    }
+    const tradeId = trade && trade.ID !== undefined ? trade.ID : '';
+    let symbol = '';
+    try {
+      const symHeader = getSheetHeadersArray().find(h => h.toUpperCase() === 'SYMBOL') || 'SYMBOL';
+      symbol = trade && trade[symHeader] ? trade[symHeader] : '';
+    } catch(e){ /* ignore header errors */ }
+    sheet.appendRow([new Date(), action, tradeId, symbol, JSON.stringify(trade)]);
+  } catch(err) {
+    Logger.log('Failed to log trade action: ' + err);
+  }
+}
+/**
+ * Generates an AI-powered forecast along with basic historical stats.
+ */
+function getForecast() {
+  try {
+    const tradesRes = getTrades();
+    if (tradesRes.error) return { error: tradesRes.error };
+    const trades = Array.isArray(tradesRes) ? tradesRes : [];
+    const headers = getSheetHeadersArray();
+    const pnlCol = headers.find(h => h.toUpperCase() === "RESULTEUR") || "ResultEUR";
+    const pnlValues = trades.map(t => parseFloat(t[pnlCol]) || 0);
+    const mean = pnlValues.length ? pnlValues.reduce((a,b)=>a+b,0) / pnlValues.length : 0;
+    const stdev = pnlValues.length ? Math.sqrt(pnlValues.reduce((s,v)=>s+Math.pow(v-mean,2),0) / pnlValues.length) : 0;
+    const ddData = getEquityCurveAndOverallMaxDD("ALL");
+    const maxDD = ddData && !ddData.error ? parseFloat(ddData.overallMaxDrawdown) || 0 : 0;
+    let aiResp;
+    try {
+      aiResp = JSON.parse(callGPT('forecast', { mean, stdev, maxDD }, 256));
+    } catch(e) {
+      aiResp = { error: 'Invalid AI response' };
+    }
+    if (aiResp.error) return { error: aiResp.error, stats: { mean, stdev, maxDD } };
+    return { forecast: aiResp, stats: { mean, stdev, maxDD } };
+  } catch (e) {
+    return { error: `Error generating forecast: ${e.message}` };
+  }
 }
