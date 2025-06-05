@@ -5,6 +5,7 @@
     <title>Advanced Trading Analytics Suite</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
@@ -23,6 +24,10 @@
             --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --border-radius: 8px;
         }
+        .dark-mode { --light-bg: #1f2937; color: #f8f9fa; }
+        .dark-mode .navbar-custom { background: linear-gradient(135deg,#111,#333); }
+        .dark-mode .card-enhanced{background:#273447;color:#f8f9fa;}
+        .dark-mode .card-header-enhanced{background:#1f2937;color:#e5e7eb;}
         body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: #1f2937; font-size: 16px; }
         .navbar-custom { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 0.75rem 0; }
         .navbar-custom .nav-link { color: rgba(255,255,255,0.85) !important; font-weight: 500; transition: all 0.3s ease; border-radius: 6px; margin: 0 4px; padding: 0.5rem 0.75rem; }
@@ -110,6 +115,7 @@
                     <li class="nav-item"><a class="nav-link" id="navRisk" href="#">⚠️ Risk Analysis</a></li>
                     <li class="nav-item"><a class="nav-link" id="navAi" href="#">🔮 AI Insights</a></li>
                     <li class="nav-item"><a class="nav-link" id="navSettings" href="#">⚙️ Settings</a></li>
+                        <li class="nav-item"><a class="nav-link" id="toggleTheme" href="#" title="Toggle dark mode"><i class="fa fa-moon"></i></a></li>
                 </ul>
             </div>
         </div>
@@ -209,6 +215,7 @@
 
     <div class="modal fade" id="editTradeModal" tabindex="-1" role="dialog" aria-labelledby="editTradeModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="editTradeModalLabel">Edit Trade</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><form id="editTradeForm" class="form-enhanced"><input type="hidden" id="editTradeId"><div class="row"><div class="col-md-3 form-group"><label for="editTradeSymbol">Symbol</label><input type="text" class="form-control" id="editTradeSymbol" required></div><div class="col-md-3 form-group"><label for="editTradeAssetType">Asset Type</label><select class="custom-select" id="editTradeAssetType"><option value="">-- Select Asset Type --</option></select></div><div class="col-md-3 form-group"><label for="editTradeAction">Action</label><select class="custom-select" id="editTradeAction"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div><div class="col-md-3 form-group"><label for="editTradeShares">Shares</label><input type="number" class="form-control" id="editTradeShares" required></div></div><div class="row"><div class="col-md-3 form-group"><label for="editTradeCallPriceUSD">Price (USD)</label><input type="number" step="0.01" class="form-control" id="editTradeCallPriceUSD" required></div><div class="col-md-3 form-group"><label for="editTradeDateIn">Date In (Open)</label><input type="date" class="form-control" id="editTradeDateIn" required></div><div class="col-md-3 form-group"><label for="editTradeDateOut">Date Out (Close)</label><input type="date" class="form-control" id="editTradeDateOut"></div><div class="col-md-3 form-group"><label for="editTradeStrategy">Strategy</label><select class="custom-select" id="editTradeStrategy"><option value="">-- Select Strategy --</option></select></div></div><div class="row"><div class="col-md-6 form-group"><label for="editTradeInvestmentEUR">Investment (€)</label><input type="number" step="0.01" class="form-control" id="editTradeInvestmentEUR"></div><div class="col-md-6 form-group"><label for="editTradeResultEUR">Result P&L (€)</label><input type="number" step="0.01" class="form-control" id="editTradeResultEUR"></div></div><div class="form-group"><label for="editTradeNotes">Notes</label><input type="text" class="form-control" id="editTradeNotes"></div></form></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary btn-enhanced" data-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary btn-enhanced" onclick="submitTradeUpdate()">Save Changes</button></div></div></div></div>
     <div class="modal fade" id="importResultsModal" tabindex="-1" role="dialog" aria-labelledby="importResultsModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="importResultsModalLabel">CSV Import Results</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><p id="importSummaryMessage"></p><div id="importErrorsSection" style="display:none;"><h6>Errors/Warnings:</h6><div id="importErrorsList"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary btn-enhanced" data-dismiss="modal">Close</button></div></div></div></div>
+    <button id="backToTop" class="btn btn-primary btn-enhanced" style="position: fixed; bottom: 30px; right: 30px; display:none; z-index:9999;"><i class="fa fa-arrow-up"></i></button>
 
     <script>
     // IIFE for the entire script
@@ -1958,6 +1965,12 @@
             document.getElementById('navRisk').addEventListener('click', (e) => { e.preventDefault(); showView('riskView'); });
             document.getElementById('navAi').addEventListener('click', (e) => { e.preventDefault(); showView('aiView');});
             document.getElementById('navSettings').addEventListener('click', (e) => { e.preventDefault(); showView('settingsView');});
+                                                const storedTheme = localStorage.getItem("theme") || "light";
+                if(storedTheme === "dark") document.body.classList.add("dark-mode");
+                document.getElementById("toggleTheme").addEventListener("click", (e) => { e.preventDefault(); document.body.classList.toggle("dark-mode"); localStorage.setItem("theme", document.body.classList.contains("dark-mode")?"dark":"light");});
+                const backToTopBtn = document.getElementById("backToTop");
+                window.addEventListener("scroll", () => { backToTopBtn.style.display = window.pageYOffset > 200 ? "block" : "none";});
+                backToTopBtn.addEventListener("click", () => window.scrollTo({top:0, behavior:"smooth"}));
             
             const addTradeFormEl = document.getElementById('addTradeForm');
             if(addTradeFormEl) {
