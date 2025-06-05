@@ -104,7 +104,7 @@ function callGPT(task, payload, maxTokens) {
 function getHeadersForClient() {
   try {
     if (typeof getSheetHeadersArray !== 'function') {
-      Logger.log("Error crític: La funció getSheetHeadersArray no està definida (should be in ConstructUtils.gs).");
+      Logger.log("Error crític: La funció getSheetHeadersArray no està definida (should be defined).");
       throw new Error("La funció getSheetHeadersArray no està definida.");
     }
     return getSheetHeadersArray();
@@ -123,13 +123,13 @@ function getTrades() {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (typeof SHEET_NAME === 'undefined') { Logger.log("getTrades: Error - SHEET_NAME undefined."); throw new Error("Constant SHEET_NAME no definida."); }
     const sheet = ss.getSheetByName(SHEET_NAME);
-    if (!sheet) { Logger.log(`getTrades: Error - Sheet "${SHEET_NAME}" NOT found.`); throw new Error(`El full "${SHEET_NAME}" no s'ha trobat. Assegura't que el nom de la pestanya coincideix exactament, incloent majúscules/minúscules i espais. També, comprova que 'ConstructUtils.gs' existeix i 'getSheetHeadersArray' està definit correctament.`); }
+    if (!sheet) { Logger.log(`getTrades: Error - Sheet "${SHEET_NAME}" NOT found.`); throw new Error(`El full "${SHEET_NAME}" no s'ha trobat. Assegura't que el nom de la pestanya coincideix exactament, incloent majúscules/minúscules i espais. També, comprova que 'getSheetHeadersArray' està definit correctament.`); }
     Logger.log(`getTrades: Successfully found sheet: "${SHEET_NAME}"`);
 
-    if (typeof getSheetHeadersArray !== 'function') { Logger.log("getTrades: Error - getSheetHeadersArray undefined."); throw new Error("La funció getSheetHeadersArray no està definida (hauria d'estar a ConstructUtils.gs)."); }
+    if (typeof getSheetHeadersArray !== 'function') { Logger.log("getTrades: Error - getSheetHeadersArray undefined."); throw new Error("La funció getSheetHeadersArray no està definida ."); }
     const headers = getSheetHeadersArray();
     Logger.log("getTrades: Headers from getSheetHeadersArray(): " + JSON.stringify(headers));
-    if (!headers || headers.length === 0) { Logger.log("getTrades: Error - Headers array empty."); throw new Error("Headers array invàlid o buit. Verifica getSheetHeadersArray() a ConstructUtils.gs."); }
+    if (!headers || headers.length === 0) { Logger.log("getTrades: Error - Headers array empty."); throw new Error("Headers array invàlid o buit. Verifica getSheetHeadersArray()."); }
     
     const lastRow = sheet.getLastRow();
     Logger.log("getTrades: Last row: " + lastRow + ", Headers count: " + headers.length);
@@ -825,5 +825,32 @@ function logTradeAction(action, trade) {
     sheet.appendRow([new Date(), action, tradeId, symbol, JSON.stringify(trade)]);
   } catch(err) {
     Logger.log('Failed to log trade action: ' + err);
+  }
+}
+/**
+ * Generates an AI-powered forecast along with basic historical stats.
+ */
+function getForecast() {
+  try {
+    const tradesRes = getTrades();
+    if (tradesRes.error) return { error: tradesRes.error };
+    const trades = Array.isArray(tradesRes) ? tradesRes : [];
+    const headers = getSheetHeadersArray();
+    const pnlCol = headers.find(h => h.toUpperCase() === "RESULTEUR") || "ResultEUR";
+    const pnlValues = trades.map(t => parseFloat(t[pnlCol]) || 0);
+    const mean = pnlValues.length ? pnlValues.reduce((a,b)=>a+b,0) / pnlValues.length : 0;
+    const stdev = pnlValues.length ? Math.sqrt(pnlValues.reduce((s,v)=>s+Math.pow(v-mean,2),0) / pnlValues.length) : 0;
+    const ddData = getEquityCurveAndOverallMaxDD("ALL");
+    const maxDD = ddData && !ddData.error ? parseFloat(ddData.overallMaxDrawdown) || 0 : 0;
+    let aiResp;
+    try {
+      aiResp = JSON.parse(callGPT('forecast', { mean, stdev, maxDD }, 256));
+    } catch(e) {
+      aiResp = { error: 'Invalid AI response' };
+    }
+    if (aiResp.error) return { error: aiResp.error, stats: { mean, stdev, maxDD } };
+    return { forecast: aiResp, stats: { mean, stdev, maxDD } };
+  } catch (e) {
+    return { error: `Error generating forecast: ${e.message}` };
   }
 }
