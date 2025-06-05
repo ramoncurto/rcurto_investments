@@ -13,3 +13,13 @@ test('computeHistoricalPerformanceAverages on sample data',()=>{
   expect(res.suggestedRoiTargetPercent).toBeCloseTo(0.1739,3);
   expect(res.suggestedLossPerFailedOpPercent).toBeCloseTo(0.1493,3);
 });
+
+test('computeHistoricalPerformanceAverages handles malformed records',()=>{
+  const trades=[
+    {'DATE IN':'2024-01-01','INVESTMENT (EURO)':'100','RESULT':'50'},
+    {'DATE IN':'bad-date','INVESTMENT (EURO)':'foo','RESULT':null}
+  ];
+  const res=computeHistoricalPerformanceAverages(trades);
+  expect(res.success).toBe(true);
+  expect(res.historicalWinRate).not.toBeNaN();
+});

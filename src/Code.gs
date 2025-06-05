@@ -98,7 +98,8 @@ function callGPT(task, payload, maxTokens) {
 
 /**
  * Gets the sheet headers.
- * Requires a project-defined function `getSheetHeadersArray()` that returns an array of column names.
+ * Requires a project-defined function `getSheetHeadersArray()` that returns an
+ * array of column names. Ensure this helper exists somewhere in your project.
  */
 function getHeadersForClient() {
   try {
