@@ -94,12 +94,28 @@ function callGPT(task, payload, maxTokens) {
   }
 }
 
+/**
+ * Reads the first row of the Trades sheet and returns the headers as an array.
+ */
+function getSheetHeadersArray() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) throw new Error('Sheet "' + SHEET_NAME + '" not found.');
+    const lastCol = sheet.getLastColumn();
+    const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0];
+    return headers.map(h => String(h).trim());
+  } catch (e) {
+    Logger.log('Error in getSheetHeadersArray: ' + e);
+    return [];
+  }
+}
+
 // --- CLIENT-CALLABLE ENDPOINTS (Data Retrieval & Manipulation) ---
 
 /**
- * Gets the sheet headers.
- * Requires a project-defined function `getSheetHeadersArray()` that returns an
- * array of column names. Ensure this helper exists somewhere in your project.
+ * Gets the sheet headers for the Trades sheet.
+ * Relies on `getSheetHeadersArray()` defined in this file.
  */
 function getHeadersForClient() {
   try {
