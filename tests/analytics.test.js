@@ -23,3 +23,11 @@ test('computeHistoricalPerformanceAverages handles malformed records',()=>{
   expect(res.success).toBe(true);
   expect(res.historicalWinRate).not.toBeNaN();
 });
+
+test('parse numbers with thousand separators',()=>{
+  const trades=[{'DATE IN':'2024-01-01','INVESTMENT (EURO)':'2,034.80€','RESULT':'1.000,50€'}];
+  const res=computeHistoricalPerformanceAverages(trades);
+  expect(res.success).toBe(true);
+  expect(res.historicalAvgInvestmentPerOp).toBeCloseTo(2034.80,2);
+  expect(res.historicalWinRate).toBeCloseTo(1,5);
+});

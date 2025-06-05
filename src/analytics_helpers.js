@@ -3,7 +3,26 @@ function computeHistoricalPerformanceAverages(trades){
   const yearsSet=new Set();
   let totalInvestedEUR=0,tradesCountForRR=0,totalGrossProfitEUR=0,totalGrossLossEUR=0;
   let winningTradesCount=0,losingTradesCount=0;
-  const parseNumber=v=>parseFloat(String(v).replace(/[€,$]/g,'').replace(',','.'))||0;
+  const parseNumber=v=>{
+    if(v===undefined||v===null||v==='') return 0;
+    let s=String(v).replace(/[€,$\s]/g,'').trim();
+    const lastComma=s.lastIndexOf(',');
+    const lastDot=s.lastIndexOf('.');
+    if(lastComma>-1 && lastDot>-1){
+      if(lastComma>lastDot){
+        s=s.replace(/\./g,'');
+        s=s.replace(',','.');
+      }else{
+        s=s.replace(/,/g,'');
+      }
+    }else if(lastComma>-1){
+      s=s.replace(/\./g,'');
+      s=s.replace(',','.');
+    }else{
+      s=s.replace(/,/g,'');
+    }
+    return parseFloat(s)||0;
+  };
   trades.forEach(t=>{
     if(!t['DATE IN']) return;
     const invest=parseNumber(t['INVESTMENT (EURO)']);
