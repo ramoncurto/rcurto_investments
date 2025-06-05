@@ -1,0 +1,2245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <title>Advanced Trading Analytics Suite</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    
+    <style>
+        :root {
+            --primary-color: #2563eb; 
+            --success-color: #10b981; 
+            --danger-color: #ef4444;  
+            --warning-color: #f59e0b; 
+            --info-color: #06b6d4;   
+            --light-bg: #f8fafc;    
+            --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --border-radius: 8px;
+        }
+        body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: #1f2937; font-size: 16px; }
+        .navbar-custom { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 2px 10px rgba(0,0,0,0.15); padding: 0.75rem 0; }
+        .navbar-custom .nav-link { color: rgba(255,255,255,0.85) !important; font-weight: 500; transition: all 0.3s ease; border-radius: 6px; margin: 0 4px; padding: 0.5rem 0.75rem; }
+        .navbar-custom .nav-link:hover { color: white !important; background: rgba(255,255,255,0.1); }
+        .navbar-custom .nav-link.active { color: white !important; background: rgba(255,255,255,0.2); box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .navbar-brand-custom { font-weight: 600; color: white !important; font-size: 1.2rem; }
+        .app-container { padding: 1.5rem; } 
+        .view { display: none; }    
+        .view.active { display: block; }
+        .card-enhanced { border: none; border-radius: var(--border-radius); box-shadow: var(--card-shadow); transition: transform 0.2s ease, box-shadow 0.2s ease; background: white; margin-bottom: 1.5rem; display: flex; flex-direction: column; }
+        .card-enhanced:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.08); }
+        .card-header-enhanced { background: #f9fafb; border-bottom: 1px solid #e5e7eb; font-weight: 600; color: #374151; border-radius: var(--border-radius) var(--border-radius) 0 0 !important; padding: 0.75rem 1.25rem; }
+        .card-header-enhanced h2, .card-header-enhanced h5 { margin-bottom: 0; }
+        .card-body-flex-grow { flex-grow: 1; } 
+        .metric-card { text-align: center; padding: 1.25rem; border-radius: var(--border-radius); background: white; box-shadow: var(--card-shadow); transition: all 0.3s ease; height: 100%; display: flex; flex-direction: column; justify-content: center; }
+        .metric-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.1), 0 6px 15px rgba(0,0,0,0.08); }
+        .metric-value { font-size: 1.75rem; font-weight: 700; margin-bottom: 0.25rem; line-height: 1.2; }
+        .metric-label { font-size: 0.8rem; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        .positive { color: var(--success-color) !important; }
+        .negative { color: var(--danger-color) !important; }
+        .neutral { color: #4b5563; }
+        .chart-container { position: relative; height: 280px; margin: 1rem 0; }
+        .chart-container.large { height: 400px; }
+        .dashboard-chart-container { position: relative; height: 320px; margin-top: 1rem;}
+        .table-enhanced { font-size: 0.875rem; }
+        .table-enhanced th { background-color: #f9fafb; border-top: none; font-weight: 600; color: #374151; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; padding: 0.75rem; white-space: nowrap;}
+        .table-enhanced td { padding: 0.75rem; vertical-align: middle; }
+        .table-enhanced .btn-sm { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
+        .btn-enhanced { font-weight: 500; border-radius: 6px; transition: all 0.2s ease; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); padding: 0.5rem 1rem; }
+        .btn-enhanced:hover { transform: translateY(-1px); box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .loading-spinner { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 10000; display: flex; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .form-enhanced .form-control, .form-enhanced .custom-select { border-radius: 6px; border: 1px solid #d1d5db; transition: all 0.2s ease; font-size: 0.875rem; padding: 0.5rem 0.75rem; }
+        .form-enhanced .form-control:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .form-enhanced label { font-size: 0.8rem; font-weight: 500; margin-bottom: 0.25rem; color: #4b5563; }
+        #toastNotification { position: fixed; top: 20px; right: 20px; background-color: #333; color: white; padding: 15px 25px; border-radius: var(--border-radius); box-shadow: 0 5px 15px rgba(0,0,0,0.2); z-index: 10001; opacity: 0; visibility: hidden; transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease; transform: translateY(-20px); }
+        #toastNotification.show { opacity: 1; visibility: visible; transform: translateY(0); }
+        #toastNotification.success { background-color: var(--success-color); }
+        #toastNotification.error { background-color: var(--danger-color); }
+        #toastNotification.info { background-color: var(--info-color); }
+        .progress { height: 1.25rem; font-size: 0.8rem; }
+        .dashboard-section-title { font-size: 1.1rem; font-weight: 600; color: #374151; margin-bottom: 0.75rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.5rem;}
+        .advanced-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .filter-controls-card { padding: 1rem; } 
+        .filter-controls-card .form-group { margin-bottom: 0.5rem; } 
+        .filter-controls-card .form-row .col, .filter-controls-card .form-row .form-group { padding-left: 5px; padding-right: 5px;} 
+        .filter-controls-card label { margin-bottom: 0.2rem; font-size: 0.75rem;}
+        #equityCurveTimeframeSelector .btn { font-size: 0.8rem; padding: 0.25rem 0.5rem;}
+        .date-preset-btn-group .btn.active { background-color: var(--primary-color); color: white; border-color: var(--primary-color); }
+        .clickable-trade-row:hover { background-color: #f0f0f0; cursor: pointer; }
+        .takeaway-caption { font-style: italic; font-size: 0.85rem; margin-top: 0.75rem; padding: 0.5rem; background-color: #f8f9fa; border-radius: 4px; border-left: 3px solid var(--info-color); }
+        #tradesTableBulkActionToolbar { padding: 0.75rem 1rem; background-color: #e9ecef; border: 1px solid #ced4da; border-radius: var(--border-radius); margin-bottom: 1rem; }
+        .list-item-management { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; border: 1px solid #eee; margin-bottom: 5px; border-radius: var(--border-radius); background-color: #fdfdfd;}
+        .list-item-management span { flex-grow: 1; }
+        .list-item-management .btn-delete-item { font-size: 0.8rem; padding: 0.1rem 0.4rem; }
+        .list-container { max-height: 300px; overflow-y: auto; }
+        #importErrorsList { max-height: 300px; overflow-y: auto; font-size: 0.8rem; background-color: #f8f9fa; padding: 10px; border-radius: 5px; }
+        #importErrorsList p { margin-bottom: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px dashed #ddd; }
+        #importErrorsList p:last-child { border-bottom: none; margin-bottom: 0; }
+        #importErrorsList .error-row-data { font-family: monospace; word-break: break-all; color: #555; }
+
+        @media (max-width: 768px) {
+            .app-container { padding: 1rem; }
+            .advanced-metrics { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+            .navbar-custom .nav-link { margin: 2px 0; display: block; text-align: center;}
+            .navbar-nav { width: 100%; }
+            .navbar-toggler { margin-top: 0.25rem; }
+            .filter-controls-card .form-row > .col, .filter-controls-card .form-row > .form-group { margin-bottom: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div id="appLoadingSpinner" class="loading-spinner" style="display:flex;"> <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="sr-only">Loading...</span></div></div>
+    <div id="toastNotification"></div>
+
+    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+        <div class="container">
+            <span class="navbar-brand navbar-brand-custom">📈 Trading Suite</span>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation"><span style="color:white; font-size: 1.5rem;">≡</span></button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ml-auto">
+                    <li class="nav-item"><a class="nav-link" id="navDashboard" href="#">🏠 Dashboard</a></li>
+                    <li class="nav-item"><a class="nav-link" id="navManagement" href="#">⇄ Trades</a></li>
+                    <li class="nav-item"><a class="nav-link" id="navAnalytics" href="#">📊 Analytics</a></li>
+                    <li class="nav-item"><a class="nav-link" id="navForecasting" href="#">🎯 Goals & Projections</a></li>
+                    <li class="nav-item"><a class="nav-link" id="navRisk" href="#">⚠️ Risk Analysis</a></li>
+                    <li class="nav-item"><a class="nav-link" id="navAi" href="#">🔮 AI Insights</a></li>
+                    <li class="nav-item"><a class="nav-link" id="navSettings" href="#">⚙️ Settings</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="app-container">
+        <div id="dashboardView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div><h2 class="mb-0">🏠 Dashboard Overview</h2><p class="text-muted mb-0">Your current trading portfolio status and key indicators.</p></div>
+                <span class="text-muted small">Last refreshed: <span id="dashboardLastRefreshed">N/A</span></span>
+            </div>
+            <div class="advanced-metrics mb-4">
+                <div class="metric-card"><div class="metric-value" id="dashboardPortfolioValue">€0.00</div><div class="metric-label">Portfolio Value</div></div>
+                <div class="metric-card"><div class="metric-value" id="dashboardTotalNetProfit">€0.00</div><div class="metric-label">Total Net Profit</div></div>
+                <div class="metric-card"><div class="metric-value" id="dashboardWinRate">0%</div><div class="metric-label">Overall Win Rate</div></div>
+                <div class="metric-card"><div class="metric-value" id="dashboardProfitFactor">0.00</div><div class="metric-label">Profit Factor</div></div>
+                <div class="metric-card"><div class="metric-value" id="dashboardMaxDrawdown">€0.00</div><div class="metric-label">Overall Max Drawdown</div></div>
+            </div>
+            <div class="row">
+                <div class="col-lg-8 mb-4">
+                    <div class="card card-enhanced">
+                        <div class="card-header card-header-enhanced d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0" id="dashboardEquityCurveChartTitle">Equity Curve (All Time)</h5>
+                            <div id="equityCurveTimeframeSelector"><div class="btn-group btn-group-sm" role="group"><button type="button" class="btn btn-outline-primary btn-enhanced" data-timeframe="1M">1M</button><button type="button" class="btn btn-outline-primary btn-enhanced" data-timeframe="3M">3M</button><button type="button" class="btn btn-outline-primary btn-enhanced" data-timeframe="YTD">YTD</button><button type="button" class="btn btn-outline-primary btn-enhanced active" data-timeframe="ALL">ALL</button></div></div>
+                        </div>
+                        <div class="card-body card-body-flex-grow"><div class="dashboard-chart-container"><canvas id="dashboardEquityCurveChart"></canvas></div></div>
+                    </div>
+                </div>
+                <div class="col-lg-4 mb-4">
+                    <div class="card card-enhanced mb-4">
+                        <div class="card-header card-header-enhanced"><h5 class="mb-0">Progress to Financial Goal</h5></div>
+                        <div class="card-body"><div id="goalProgressInfo" class="text-center"><p id="goalProgressText" class="mb-2">Loading goal data...</p><div class="progress" style="height: 25px;"><div id="goalProgressBar" class="progress-bar bg-success" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div></div></div></div>
+                    </div>
+                    <div class="card card-enhanced">
+                        <div class="card-header card-header-enhanced"><h5 class="mb-0">Quick Actions</h5></div>
+                        <div class="card-body text-center"><button id="dashboardAddNewTradeBtn" class="btn btn-primary btn-enhanced btn-block mb-2">➕ Add New Trade</button><button id="dashboardRefreshBtn" class="btn btn-info btn-enhanced btn-block">🔄 Refresh Dashboard</button></div>
+                    </div>
+                </div>
+            </div>
+            <div class="card card-enhanced">
+                <div class="card-header card-header-enhanced"><h5 class="mb-0">Recent Trades (Last 5)</h5></div>
+                <div class="card-body p-0"><div class="table-responsive"><table class="table table-hover table-enhanced mb-0"><thead><tr><th>Symbol</th><th>P&L (€)</th><th>Date</th><th>Status</th></tr></thead><tbody id="dashboardRecentTradesTableBody"><tr><td colspan="4" class="text-center text-muted py-3">Loading...</td></tr></tbody></table></div></div>
+            </div>
+        </div>
+
+        <div id="managementView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div><h2 class="mb-0">⇄ Trades</h2><p class="text-muted mb-0">Manage and track your trading operations.</p></div>
+                <div><button id="importCsvBtn" class="btn btn-success btn-enhanced mr-2">📥 Import from CSV</button><input type="file" id="csvFileInput" accept=".csv" style="display: none;"><button id="downloadCsvTemplateBtn" class="btn btn-outline-info btn-enhanced mr-2">📄 Download Template</button><button class="btn btn-info btn-enhanced" onclick="exportTrades()">📊 Export Data</button></div>
+            </div>
+            <div class="advanced-metrics mb-4"><div class="metric-card"><div class="metric-value positive" id="totalPortfolioValue">€0.00</div><div class="metric-label">Portfolio Value</div><div class="metric-change" id="portfolioChange">+0.00%</div></div><div class="metric-card"><div class="metric-value" id="totalTradesCount">0</div><div class="metric-label">Total Trades</div><div class="metric-change" id="tradesThisMonth">0 this month</div></div><div class="metric-card"><div class="metric-value positive" id="winRateStat">0%</div><div class="metric-label">Win Rate</div><div class="metric-change" id="winRateTrend">--</div></div><div class="metric-card"><div class="metric-value" id="avgReturnStat">0.00%</div><div class="metric-label">Avg R/R per Trade</div><div class="metric-change" id="returnTrend">--</div></div></div>
+            <div class="card card-enhanced mb-4"><div class="card-header card-header-enhanced"><h5 class="mb-0">Add New Trade</h5></div><div class="card-body"><form id="addTradeForm" class="form-enhanced"><div class="row"><div class="col-md-3 form-group"><label for="tradeSymbol">Symbol</label><input type="text" class="form-control" id="tradeSymbol" required></div><div class="col-md-3 form-group"><label for="tradeAssetType">Asset Type</label><select class="custom-select" id="tradeAssetType"><option value="">-- Select Asset Type --</option></select></div><div class="col-md-3 form-group"><label for="tradeAction">Action</label><select class="custom-select" id="tradeAction"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div><div class="col-md-3 form-group"><label for="tradeShares">Shares</label><input type="number" class="form-control" id="tradeShares" required></div></div><div class="row"><div class="col-md-3 form-group"><label for="tradeCallPriceUSD">Price (USD)</label><input type="number" step="0.01" class="form-control" id="tradeCallPriceUSD" required></div><div class="col-md-3 form-group"><label for="tradeDateIn">Date In (Open)</label><input type="date" class="form-control" id="tradeDateIn" required></div><div class="col-md-3 form-group"><label for="tradeDateOut">Date Out (Close)</label><input type="date" class="form-control" id="tradeDateOut"></div><div class="col-md-3 form-group"><label for="tradeStrategy">Strategy</label><select class="custom-select" id="tradeStrategy"><option value="">-- Select Strategy --</option></select></div></div><div class="row"><div class="col-md-4 form-group"><label for="tradeInvestmentEUR">Investment (€)</label><input type="number" step="0.01" class="form-control" id="tradeInvestmentEUR"></div><div class="col-md-4 form-group"><label for="tradeResultEUR">Result P&L (€)</label><input type="number" step="0.01" class="form-control" id="tradeResultEUR"></div><div class="col-md-4 form-group"><label for="tradeNotes">Notes</label><input type="text" class="form-control" id="tradeNotes"></div></div><div class="mt-2"><button type="submit" class="btn btn-primary btn-enhanced">Add Trade</button><button type="button" class="btn btn-outline-secondary btn-enhanced ml-2" onclick="clearAddTradeForm()">Clear</button></div></form></div></div>
+            <div class="card card-enhanced mb-3 filter-controls-card"><div class="card-body"><h5 class="card-title mb-3">Filter Trades</h5><form id="filterTradesForm" class="form-enhanced"><div class="form-row"><div class="col-md-3 form-group"><label for="filterSymbol">Symbol</label><input type="text" class="form-control form-control-sm" id="filterSymbol" placeholder="Search Symbol..."></div><div class="col-md-2 form-group"><label for="filterStrategy">Strategy</label><select class="custom-select custom-select-sm" id="filterStrategy"><option value="">All Strategies</option></select></div><div class="col-md-2 form-group"><label for="filterAssetType">Asset Type</label><select class="custom-select custom-select-sm" id="filterAssetType"><option value="">All Asset Types</option></select></div><div class="col-md-2 form-group"><label for="filterDateInStart">Date In (Start)</label><input type="date" class="form-control form-control-sm" id="filterDateInStart"></div><div class="col-md-3 form-group"><label for="filterDateInEnd">Date In (End)</label><input type="date" class="form-control form-control-sm" id="filterDateInEnd"></div></div><div class="form-row mt-2"><div class="col-12 text-right"><button type="button" id="applyFiltersBtn" class="btn btn-primary btn-sm btn-enhanced">Apply Filters</button><button type="button" id="resetFiltersBtn" class="btn btn-outline-secondary btn-sm btn-enhanced ml-2">Reset Filters</button></div></div></form></div></div>
+            <div id="tradesTableBulkActionToolbar" style="display:none;"><button id="bulkDeleteBtn" class="btn btn-danger btn-sm btn-enhanced">Delete Selected (<span id="selectedTradesCount">0</span>)</button><button id="bulkDeselectAllBtn" class="btn btn-outline-secondary btn-sm btn-enhanced ml-2">Deselect All</button></div>
+            <div class="card card-enhanced"><div class="card-header card-header-enhanced d-flex justify-content-between align-items-center"><h5 class="mb-0">Trade Log</h5><button class="btn btn-info btn-sm btn-enhanced" onclick="fetchAllData()">🔄 Refresh All Data</button></div><div class="card-body p-0"><div class="table-responsive"><table class="table table-hover table-enhanced mb-0"><thead><tr><th><input type="checkbox" id="selectAllTradesCheckbox" title="Select/Deselect All Visible"></th><th>ID</th><th>Date In</th><th>Date Out</th><th>Symbol</th><th>Asset Type</th><th>Action</th><th>Shares</th><th>Price (USD)</th><th>Invest (€)</th><th>P&L (€)</th><th>R/R</th><th>Strategy</th><th>Actions</th></tr></thead><tbody id="tradesTableBody"><tr><td colspan="14" class="text-center text-muted py-4">Loading...</td></tr></tbody></table></div></div></div>
+        </div>
+
+        <div id="analyticsView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="mb-0">📊 Advanced Analytics</h2><p class="text-muted mb-0">Deep dive into your trading performance.</p></div></div>
+            <div class="card card-enhanced mb-3 filter-controls-card"><div class="card-body"><h5 class="card-title mb-3">Filter Analytics</h5><form id="analyticsFilterForm" class="form-enhanced"><div class="form-row mb-3 date-preset-btn-group" id="analyticsDatePresets"><div class="col-auto"><label class="small mb-0">Date Presets:</label></div><div class="col"><button type="button" class="btn btn-outline-secondary btn-sm btn-enhanced mr-1" data-preset="7D">Last 7 Days</button><button type="button" class="btn btn-outline-secondary btn-sm btn-enhanced mr-1" data-preset="30D">Last 30 Days</button><button type="button" class="btn btn-outline-secondary btn-sm btn-enhanced mr-1" data-preset="MTD">Month-to-Date</button><button type="button" class="btn btn-outline-secondary btn-sm btn-enhanced mr-1" data-preset="YTD">Year-to-Date</button><button type="button" class="btn btn-outline-secondary btn-sm btn-enhanced" data-preset="ALL">All Time</button></div></div><div class="form-row"><div class="col-md-3 form-group"><label for="analyticsFilterDateStart">Date In Start</label><input type="date" class="form-control form-control-sm" id="analyticsFilterDateStart"></div><div class="col-md-3 form-group"><label for="analyticsFilterDateEnd">Date In End</label><input type="date" class="form-control form-control-sm" id="analyticsFilterDateEnd"></div><div class="col-md-2 form-group"><label for="analyticsFilterSymbol">Symbols (comma-sep.)</label><input type="text" class="form-control form-control-sm" id="analyticsFilterSymbol" placeholder="e.g., AAPL,MSFT"></div><div class="col-md-2 form-group"><label for="analyticsFilterStrategy">Strategy</label><select class="custom-select custom-select-sm" id="analyticsFilterStrategy"><option value="">All Strategies</option></select></div><div class="col-md-2 form-group"><label for="analyticsFilterAssetType">Asset Type</label><select class="custom-select custom-select-sm" id="analyticsFilterAssetType"><option value="">All Asset Types</option></select></div></div><div class="form-row mt-2 align-items-end"><div class="col-md-10 text-right"><button type="button" id="applyAnalyticsFiltersBtn" class="btn btn-primary btn-sm btn-enhanced">Apply Filters</button><button type="button" id="resetAnalyticsFiltersBtn" class="btn btn-outline-secondary btn-sm btn-enhanced ml-2">Reset Filters</button></div><div class="col-md-2 form-group"><label for="analyticsFilteredYearSelector">View Year</label><select id="analyticsFilteredYearSelector" class="custom-select custom-select-sm"></select></div></div></form></div></div>
+            <div class="row mb-4"><div class="col-lg-12"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Overall Portfolio Equity Curve (€)</h5></div><div class="card-body"><div class="dashboard-chart-container" style="height: 350px;"><canvas id="overallEquityCurveChart"></canvas></div></div></div></div></div>
+            <div class="row mb-4"><div class="col-lg-8 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Monthly Net P&L (€) - <span class="selected-year-label"></span></h5></div><div class="card-body"><div class="chart-container"><canvas id="performanceChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="performanceChartTakeaway"><em>Loading...</em></p></div></div></div><div class="col-lg-4"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Trades: Success vs. Fail - <span class="selected-year-label"></span></h5></div><div class="card-body"><div class="chart-container"><canvas id="successFailChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="successFailChartTakeaway"><em>Loading...</em></p></div></div></div></div>
+            <div class="row mb-4"><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">P&L by Price Range (CallPriceUSD) - <span class="selected-year-label"></span></h5></div><div class="card-body"><div class="chart-container"><canvas id="priceRangePerformanceChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="priceRangePerformanceChartTakeaway"><em>Loading...</em></p></div></div></div><div class="col-lg-6"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Monthly Investment (€) - <span class="selected-year-label"></span></h5></div><div class="card-body"><div class="chart-container"><canvas id="monthlyInvestmentChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="monthlyInvestmentChartTakeaway"><em>Loading...</em></p></div></div></div></div>
+            <div class="row mb-4"><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">P&L by Day of Week (€)</h5></div><div class="card-body"><div class="chart-container"><canvas id="pnlByDayOfWeekChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="pnlByDayOfWeekChartTakeaway"><em>Loading...</em></p></div></div></div><div class="col-lg-6"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Win Rate by Day of Week (%)</h5></div><div class="card-body"><div class="chart-container"><canvas id="winRateByDayOfWeekChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="winRateByDayOfWeekChartTakeaway"><em>Loading...</em></p></div></div></div></div>
+            <div class="row mb-4"><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">P&L by Month Category (€)</h5></div><div class="card-body"><div class="chart-container"><canvas id="pnlByMonthCategoryChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="pnlByMonthCategoryChartTakeaway"><em>Loading...</em></p></div></div></div><div class="col-lg-6"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Win Rate by Month Category (%)</h5></div><div class="card-body"><div class="chart-container"><canvas id="winRateByMonthCategoryChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="winRateByMonthCategoryChartTakeaway"><em>Loading...</em></p></div></div></div></div>
+            <div class="row mb-4"><div class="col-lg-12"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">P&L by Top Impacting Symbols (€)</h5></div><div class="card-body"><div class="chart-container large"><canvas id="pnlByTopSymbolsChart"></canvas></div><p class="text-muted small mt-2 text-center takeaway-caption" id="pnlByTopSymbolsChartTakeaway"><em>Loading...</em></p></div></div></div></div>
+            <div id="noAnalyticsDataMessage" class="alert alert-info" style="display:none;">No data available for the selected filters. Try adjusting your criteria.</div>
+        </div>
+
+        <div id="forecastingView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="mb-0">🎯 Goals & Projections</h2><p class="text-muted mb-0">Set goals and get performance-based projections.</p></div></div>
+            <div class="card card-enhanced mb-4"><div class="card-header card-header-enhanced"><h5 class="mb-0">Set Your Trading Goals</h5></div><div class="card-body"><form id="goalsForm" class="form-enhanced"><div class="row"><div class="col-md-3 form-group"><label for="capitalForTrading">Initial Capital (€)</label><input type="number" class="form-control" id="capitalForTrading" value="10000"></div><div class="col-md-3 form-group"><label for="roiTarget">Target ROI/Successful Op (%)</label><input type="number" step="0.01" class="form-control" id="roiTarget" value="20"></div><div class="col-md-3 form-group"><label for="lossPerFailedOpPercent">Target Loss/Failed Op (%)</label><input type="number" step="0.01" class="form-control" id="lossPerFailedOpPercent" value="5"></div><div class="col-md-3 form-group"><label for="taxesPerOp">Avg. Commission/Op (€)</label><input type="number" step="0.01" class="form-control" id="taxesPerOp" value="10"></div></div><div class="row"><div class="col-md-3 form-group"><label for="avgInvestmentPerOp">Avg. Investment/Op (€)</label><input type="number" class="form-control" id="avgInvestmentPerOp" value="5000"></div><div class="col-md-3 form-group"><label for="monthlyOpsTarget">Monthly Ops Target</label><input type="number" class="form-control" id="monthlyOpsTarget" value="30"></div><div class="col-md-3 form-group"><label for="successfulOpsPercentTarget">Target Success Rate (%)</label><input type="number" step="0.01" class="form-control" id="successfulOpsPercentTarget" value="50"></div><div class="col-md-3 form-group"><label for="finalCapitalGoal">Final Capital Goal (€)</label><input type="number" class="form-control" id="finalCapitalGoal" value="2000000"></div></div><button type="submit" class="btn btn-primary btn-enhanced">Save & Calculate Projections</button><button type="button" class="btn btn-outline-secondary btn-enhanced ml-2" onclick="loadUserGoalsAndPopulateForm()">Load Saved Goals</button><button type="button" id="loadHistoricalAveragesBtn" class="btn btn-info btn-enhanced ml-2">Suggest from History</button></form></div></div>
+            <div id="projectionsDisplay" class="card card-enhanced mb-4" style="display:none;"><div class="card-header card-header-enhanced"><h5 class="mb-0">Trading Projections (Based on Your Goals)</h5></div><div class="card-body"><div class="row"><div class="col-md-3"><strong>Est. Monthly Net Gain:</strong> <span id="projMonthlyNetGain"></span></div><div class="col-md-3"><strong>Est. Monthly Gain %:</strong> <span id="projMonthlyGainPercent"></span></div><div class="col-md-3"><strong>Months to Goal:</strong> <span id="projMonthsToGoal"></span></div><div class="col-md-3"><strong>Est. Success Date:</strong> <span id="projSuccessDate"></span></div></div><div class="row mt-2"><div class="col-md-3"><strong>Years to Goal:</strong> <span id="projYearsToGoal"></span></div><div class="col-md-3"><strong>Projected Profit Factor:</strong> <span id="projProfitFactor">N/A</span></div></div><h6 class="mt-3">Simulated Monthly Operations Breakdown:</h6><div class="table-responsive" style="max-height: 300px; overflow-y:auto;"><table class="table table-sm table-bordered table-striped"><thead><tr><th>Op #</th><th>Type</th><th>Investment (€)</th><th>Gross P/L (€)</th><th>Commission (€)</th><th>Net P/L (€)</th><th>Cumulative (€)</th></tr></thead><tbody id="simulatedOpsTableBody"></tbody></table></div></div></div>
+        </div>
+
+        <div id="riskView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="mb-0">⚠️ Risk Analysis</h2><p class="text-muted mb-0">Key risk and profitability metrics from your trading history.</p></div></div>
+            <div class="advanced-metrics mb-4"><div class="metric-card"><div class="metric-value" id="profitFactorMetricValue">0.00</div><div class="metric-label">Profit Factor</div><div class="metric-change positive" id="profitFactorDesc">(Gross Wins / Gross Losses)</div></div><div class="metric-card"><div class="metric-value" id="expectancyMetricValue">€0.00</div><div class="metric-label">Expectancy per Trade</div><div class="metric-change neutral" id="expectancyDesc">(Avg Net Gain/Loss)</div></div><div class="metric-card"><div class="metric-value" id="avgPayoffRatioMetricValue">0.00</div><div class="metric-label">Avg. Payoff Ratio</div><div class="metric-change positive" id="avgPayoffRatioDesc">(Avg Win / Avg Loss)</div></div><div class="metric-card"><div class="metric-value" id="avgRiskRewardMetricValue">0.00</div><div class="metric-label">Avg. R/R per Trade</div><div class="metric-change neutral" id="avgRiskRewardDesc">(Avg Result / Avg Invest)</div></div></div>
+            <div class="advanced-metrics mb-4"><div class="metric-card"><div class="metric-value" id="totalNetProfitMetric">€0.00</div><div class="metric-label">Total Net Profit</div></div><div class="metric-card"><div class="metric-value positive" id="avgWinAmountMetric">€0.00</div><div class="metric-label">Average Win Amount</div></div><div class="metric-card"><div class="metric-value negative" id="avgLossAmountMetric">€0.00</div><div class="metric-label">Average Loss Amount</div></div><div class="metric-card"><div class="metric-value" id="winRateMetric">0%</div><div class="metric-label">Win Rate</div></div></div>
+            <div class="row mb-4"><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Investment Concentration by Asset Type</h5></div><div class="card-body"><div class="chart-container" style="height: 300px;"><canvas id="investmentByAssetTypeChart"></canvas></div></div></div></div><div class="col-lg-6 mb-4 mb-lg-0"><div class="card card-enhanced"><div class="card-header card-header-enhanced"><h5 class="mb-0">Portfolio Drawdown Timeline (%)</h5></div><div class="card-body"><div class="chart-container" style="height: 300px;"><canvas id="drawdownTimelineChart"></canvas></div></div></div></div></div>
+            <div id="noRiskDataMessage" class="alert alert-info" style="display:none;">Not enough data to display risk analytics or concentration charts.</div>
+        </div>
+
+        <div id="aiView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="mb-0">🔮 AI Insights</h2><p class="text-muted mb-0">Forecast y recomendaciones generadas por GPT.</p></div></div>
+            <div class="card card-enhanced mb-3"><div class="card-header card-header-enhanced"><h5 class="mb-0">Forecast Próximo Mes (P&L Estimado)</h5></div><div class="card-body"><div class="row text-center mb-3"><div class="col-md-4"><h6>Peor Escenario</h6><span id="aiWorst" class="h4 negative">-</span></div><div class="col-md-4"><h6>Escenario Base</h6><span id="aiBase" class="h4 neutral">-</span></div><div class="col-md-4"><h6>Mejor Escenario</h6><span id="aiBest" class="h4 positive">-</span></div></div><hr><h6>Comentario del Analista AI:</h6><p id="aiComment" class="mb-0 text-muted"><em>Cargando análisis...</em></p></div></div>
+            <div class="card card-enhanced mb-3"><div class="card-header card-header-enhanced"><h5 class="mb-0">Métricas de Riesgo Recientes (Últimas 60 ops)</h5></div><div class="card-body"><div class="row"><div class="col-md-4"><strong>Media P&L/Op:</strong> <span id="aiStatsMean">N/A</span></div><div class="col-md-4"><strong>Volatilidad (Desv. Est.):</strong> <span id="aiStatsStdev">N/A</span></div><div class="col-md-4"><strong>Max Drawdown:</strong> <span id="aiStatsMaxDD">N/A</span></div></div></div></div>
+        </div>
+
+        <div id="settingsView" class="view">
+            <div class="d-flex justify-content-between align-items-center mb-3"><div><h2 class="mb-0">⚙️ Application Settings</h2><p class="text-muted mb-0">Manage your preferences and application data.</p></div></div>
+            <div class="card card-enhanced mb-4"><div class="card-header card-header-enhanced"><h5 class="mb-0">Manage Trading Strategies</h5></div><div class="card-body form-enhanced"><p class="text-muted small">Define your common trading strategies. This list will populate dropdowns in trade forms and filters.</p><div class="form-row align-items-end"><div class="col-md-8 form-group"><label for="newStrategyName">New Strategy Name</label><input type="text" class="form-control" id="newStrategyName" placeholder="e.g., Earnings Play, Trend Following"></div><div class="col-md-4 form-group"><button type="button" id="addStrategyBtn" class="btn btn-primary btn-enhanced btn-block">Add Strategy</button></div></div><hr><h6>Defined Strategies:</h6><div id="strategiesListContainer" class="mt-2 list-container"><p class="text-muted text-center" id="loadingStrategiesMsg">Loading strategies...</p></div></div></div>
+            <div class="card card-enhanced mb-4"><div class="card-header card-header-enhanced"><h5 class="mb-0">Manage Asset Types</h5></div><div class="card-body form-enhanced"><p class="text-muted small">Define asset types (e.g., Stock, Crypto, Forex, Option). This helps in categorizing and filtering trades.</p><div class="form-row align-items-end"><div class="col-md-8 form-group"><label for="newAssetTypeName">New Asset Type Name</label><input type="text" class="form-control" id="newAssetTypeName" placeholder="e.g., Stock, Crypto, ETF"></div><div class="col-md-4 form-group"><button type="button" id="addAssetTypeBtn" class="btn btn-primary btn-enhanced btn-block">Add Asset Type</button></div></div><hr><h6>Defined Asset Types:</h6><div id="assetTypesListContainer" class="mt-2 list-container"><p class="text-muted text-center" id="loadingAssetTypesMsg">Loading asset types...</p></div></div></div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="editTradeModal" tabindex="-1" role="dialog" aria-labelledby="editTradeModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="editTradeModalLabel">Edit Trade</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><form id="editTradeForm" class="form-enhanced"><input type="hidden" id="editTradeId"><div class="row"><div class="col-md-3 form-group"><label for="editTradeSymbol">Symbol</label><input type="text" class="form-control" id="editTradeSymbol" required></div><div class="col-md-3 form-group"><label for="editTradeAssetType">Asset Type</label><select class="custom-select" id="editTradeAssetType"><option value="">-- Select Asset Type --</option></select></div><div class="col-md-3 form-group"><label for="editTradeAction">Action</label><select class="custom-select" id="editTradeAction"><option value="BUY">BUY</option><option value="SELL">SELL</option></select></div><div class="col-md-3 form-group"><label for="editTradeShares">Shares</label><input type="number" class="form-control" id="editTradeShares" required></div></div><div class="row"><div class="col-md-3 form-group"><label for="editTradeCallPriceUSD">Price (USD)</label><input type="number" step="0.01" class="form-control" id="editTradeCallPriceUSD" required></div><div class="col-md-3 form-group"><label for="editTradeDateIn">Date In (Open)</label><input type="date" class="form-control" id="editTradeDateIn" required></div><div class="col-md-3 form-group"><label for="editTradeDateOut">Date Out (Close)</label><input type="date" class="form-control" id="editTradeDateOut"></div><div class="col-md-3 form-group"><label for="editTradeStrategy">Strategy</label><select class="custom-select" id="editTradeStrategy"><option value="">-- Select Strategy --</option></select></div></div><div class="row"><div class="col-md-6 form-group"><label for="editTradeInvestmentEUR">Investment (€)</label><input type="number" step="0.01" class="form-control" id="editTradeInvestmentEUR"></div><div class="col-md-6 form-group"><label for="editTradeResultEUR">Result P&L (€)</label><input type="number" step="0.01" class="form-control" id="editTradeResultEUR"></div></div><div class="form-group"><label for="editTradeNotes">Notes</label><input type="text" class="form-control" id="editTradeNotes"></div></form></div><div class="modal-footer"><button type="button" class="btn btn-outline-secondary btn-enhanced" data-dismiss="modal">Cancel</button><button type="button" class="btn btn-primary btn-enhanced" onclick="submitTradeUpdate()">Save Changes</button></div></div></div></div>
+    <div class="modal fade" id="importResultsModal" tabindex="-1" role="dialog" aria-labelledby="importResultsModalLabel" aria-hidden="true"><div class="modal-dialog modal-lg" role="document"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="importResultsModalLabel">CSV Import Results</h5><button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button></div><div class="modal-body"><p id="importSummaryMessage"></p><div id="importErrorsSection" style="display:none;"><h6>Errors/Warnings:</h6><div id="importErrorsList"></div></div></div><div class="modal-footer"><button type="button" class="btn btn-secondary btn-enhanced" data-dismiss="modal">Close</button></div></div></div></div>
+
+    <script>
+    // IIFE for the entire script
+    (function() {
+        // --- GLOBAL VARIABLES & UTILITIES ---
+        let allTrades = [];
+        let allAnalyticsData = {}; 
+        let userGoals = {};
+        let sheetHeaders = []; 
+        let charts = {}; 
+        let userDefinedStrategies = []; 
+        let userDefinedAssetTypes = []; 
+        let currentDashboardTimeframe = "ALL";
+        let currentAnalyticsFilters = null; 
+        const DAYS_OF_WEEK_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; 
+        const MONTH_NAMES_JS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+        function getHeaderName(canonicalName) {
+            if (!sheetHeaders || sheetHeaders.length === 0) {
+                return canonicalName; 
+            }
+            const foundHeader = sheetHeaders.find(h => String(h).toUpperCase() === String(canonicalName).toUpperCase());
+            return foundHeader || canonicalName;
+        }
+        function formatCurrency(value, currency = 'EUR') { 
+            if (value === null || value === undefined || String(value).trim() === '') return 'N/A'; 
+            const num = parseFloat(String(value).replace(',', '.')); 
+            if (isNaN(num)) return String(value); 
+            return new Intl.NumberFormat('de-DE', { style: 'currency', currency: currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(num); 
+        }
+        function formatPercentage(value, decimals = 2) { 
+            if (value === null || value === undefined || String(value).trim() === '') return 'N/A'; 
+            const num = parseFloat(String(value)); 
+            if (isNaN(num)) return 'N/A'; 
+            return (num * 100).toFixed(decimals) + '%'; 
+        }
+        function showToast(message, type = 'info') { 
+            const toast = document.getElementById('toastNotification'); 
+            toast.textContent = message; 
+            toast.className = 'show ' + type; 
+            setTimeout(() => { 
+                toast.className = toast.className.replace('show', ''); 
+            }, 3000); 
+        }
+        function showLoading() { 
+            document.getElementById('appLoadingSpinner').style.display = 'flex'; 
+        }
+        function hideLoading() { 
+            document.getElementById('appLoadingSpinner').style.display = 'none'; 
+        }
+        function escapeHtml(unsafe) { 
+            if (typeof unsafe !== 'string') return String(unsafe || ''); 
+            return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+        function formatDateForInput(date) { 
+            if (!date || !(date instanceof Date) || isNaN(date)) return ''; 
+            const year = date.getFullYear(); 
+            const month = ('0' + (date.getMonth() + 1)).slice(-2); 
+            const day = ('0' + date.getDate()).slice(-2); 
+            return `${year}-${month}-${day}`; 
+        }
+
+        // --- VIEW MANAGEMENT ---
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.add('active');
+            }
+            
+            document.querySelectorAll('.navbar-nav .nav-link').forEach(l => l.classList.remove('active'));
+            const navIdSuffix = viewId.replace('View','');
+            let activeNavLinkId = 'nav' + navIdSuffix.charAt(0).toUpperCase() + navIdSuffix.slice(1);
+            if (viewId === 'aiView') activeNavLinkId = 'navAi';
+            else if (viewId === 'dashboardView') activeNavLinkId = 'navDashboard';
+            else if (viewId === 'settingsView') activeNavLinkId = 'navSettings';
+            else if (viewId === 'riskView') activeNavLinkId = 'navRisk';
+            
+            const activeNavLink = document.getElementById(activeNavLinkId);
+            if (activeNavLink) {
+                activeNavLink.classList.add('active');
+            }
+
+            if (viewId === 'dashboardView') { 
+                fetchAndDisplayDashboardData(currentDashboardTimeframe); 
+            } else if (viewId === 'analyticsView') {
+                if (userDefinedStrategies.length > 0) populateAnalyticsStrategyFilter();
+                if (userDefinedAssetTypes.length > 0) populateAnalyticsAssetTypeFilter();
+                fetchAndRenderAnalytics(currentAnalyticsFilters); 
+            } else if (viewId === 'riskView') { 
+                fetchAndRenderRiskData(); 
+            } else if (viewId === 'settingsView') { 
+                loadAndDisplayStrategies(); 
+                loadAndDisplayAssetTypes(); 
+            } else if (viewId === 'forecastingView') { 
+                loadUserGoalsAndPopulateForm(); 
+            } else if (viewId === 'aiView') { 
+                fetchAIInsights(); 
+            }
+        }
+
+        // --- INITIAL DATA LOADING & PROCESSING ---
+        function fetchAllData() { 
+            showLoading();
+            Promise.all([
+                new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getHeadersForClient()),
+                new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getTrades()),
+                new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getAnalyticsData(null)), 
+                new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).loadUserGoals()),
+                new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getUserDefinedStrategies()),
+                new Promise((resolve, reject) => google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getUserDefinedAssetTypes())
+            ]).then(([headers, trades, analytics, goals, strategies, assetTypes]) => { 
+                if (headers && !headers.error && Array.isArray(headers) && headers.length > 0) { 
+                    sheetHeaders = headers; 
+                } else { 
+                    sheetHeaders = ["ID", "Date In", "Date Out", "SYMBOL","AssetType", "ACTION", "SHARES", "CallPriceUSD", "InvestmentEUR", "ResultEUR", "STRATEGY", "NOTES"]; 
+                    showToast("Warning: Could not fetch sheet headers.", "warning");
+                }
+                processTrades(trades); 
+                processAnalytics(analytics); 
+                processGoals(goals);
+                if (strategies && !strategies.error && Array.isArray(strategies)) { 
+                    userDefinedStrategies = strategies; 
+                } else { 
+                    userDefinedStrategies = []; 
+                    console.error("Error fetching strategies:", strategies); 
+                }
+                if (assetTypes && !assetTypes.error && Array.isArray(assetTypes)) { 
+                    userDefinedAssetTypes = assetTypes; 
+                } else { 
+                    userDefinedAssetTypes = []; 
+                    console.error("Error fetching asset types:", assetTypes); 
+                }
+                
+                updateStrategyDropdownsInFormsAndFilters();
+                updateAssetTypeDropdownsInFormsAndFilters();
+                
+                updateAllUI(); 
+                hideLoading();
+                showToast('All data refreshed successfully!', 'success');
+            }).catch(error => { 
+                hideLoading();
+                showToast(`Error fetching initial data: ${error.message || String(error)}`, 'error');
+                console.error("Error fetching all data:", error);
+            });
+        }
+        function processTrades(tradesResult) { 
+            if (tradesResult && !tradesResult.error && Array.isArray(tradesResult)) { 
+                allTrades = tradesResult; 
+            } else { 
+                allTrades = []; 
+                console.error("Error fetching trades:", tradesResult); 
+                if(tradesResult && tradesResult.error) {
+                    showToast("Error fetching trades: " + tradesResult.error, "error"); 
+                }
+            }
+        }
+        function processAnalytics(analyticsResult) { 
+            if (analyticsResult && !analyticsResult.error) { 
+                allAnalyticsData = analyticsResult; 
+            } else { 
+                allAnalyticsData = { years: [], takeaways: generateEmptyTakeawaysClient() }; 
+                console.error("Error fetching analytics:", analyticsResult); 
+                if(analyticsResult && analyticsResult.error) {
+                    showToast("Error fetching analytics: " + analyticsResult.error, "error"); 
+                }
+            }
+        }
+        function processGoals(goalsResult){ 
+            if(goalsResult && !goalsResult.error){ 
+                userGoals = goalsResult; 
+            } else { 
+                userGoals = { capitalForTrading: 10000, roiTarget: 0.20, lossPerFailedOpPercent: 0.05, taxesPerOp: 10, avgInvestmentPerOp: 5000, monthlyOpsTarget: 30, successfulOpsPercentTarget: 0.50, finalCapitalGoal: 2000000 }; 
+                console.error("Error fetching goals:", goalsResult); 
+            }
+        }
+        function generateEmptyTakeawaysClient() { 
+            return { 
+                pnlByDayOfWeek: "Not enough data for analysis.", 
+                winRateByDayOfWeek: "Not enough data for analysis.", 
+                pnlByMonthCategory: "Not enough data for analysis.", 
+                winRateByMonthCategory: "Not enough data for analysis.", 
+                pnlByTopSymbols: "Not enough data for analysis.", 
+                performanceByPrice: "Not enough data for analysis." 
+            }; 
+        }
+
+        function updateAllUI() {
+            updateManagementQuickStats(); 
+            const activeView = document.querySelector('.view.active');
+            if (activeView) {
+                if (activeView.id === 'managementView') { 
+                    updateTradesTable(allTrades); 
+                } else if (activeView.id === 'dashboardView') { 
+                    fetchAndDisplayDashboardData(currentDashboardTimeframe); 
+                } else if (activeView.id === 'analyticsView') { 
+                    fetchAndRenderAnalytics(currentAnalyticsFilters); 
+                } else if (activeView.id === 'riskView') { 
+                    fetchAndRenderRiskData(); 
+                }
+            }
+        }
+        
+        // --- CHART UTILITIES ---
+        function destroyChart(chartInstance) { 
+            if (chartInstance) { 
+                chartInstance.destroy(); 
+            } 
+        }
+        function clearCharts() { 
+            Object.keys(charts).forEach(key => { 
+                destroyChart(charts[key]); 
+                charts[key] = null; 
+            }); 
+        }
+
+        // --- DASHBOARD LOGIC ---
+        function fetchAndDisplayDashboardData(timeframe = "ALL") {
+            currentDashboardTimeframe = timeframe; 
+            showLoading();
+            google.script.run
+                .withSuccessHandler(data => {
+                    hideLoading();
+                    if (data.error) { 
+                        showToast(`Error loading dashboard: ${data.error}`, 'error'); 
+                        return; 
+                    }
+                    if (data.success) {
+                        const kpis = data.kpis;
+                        const portfolioValueEl = document.getElementById('dashboardPortfolioValue'); 
+                        if (portfolioValueEl) {
+                            portfolioValueEl.textContent = formatCurrency(kpis.portfolioValue, 'EUR'); 
+                            portfolioValueEl.className = `metric-value ${kpis.portfolioValue >= (userGoals.capitalForTrading || 0) ? 'positive' : 'negative'}`;
+                        }
+                        const totalNetProfitEl = document.getElementById('dashboardTotalNetProfit'); 
+                        if (totalNetProfitEl) {
+                            totalNetProfitEl.textContent = formatCurrency(kpis.totalNetProfitEUR, 'EUR'); 
+                            totalNetProfitEl.className = `metric-value ${kpis.totalNetProfitEUR >= 0 ? 'positive' : 'negative'}`;
+                        }
+                        const dashboardWinRateEl = document.getElementById('dashboardWinRate');
+                        if (dashboardWinRateEl) dashboardWinRateEl.textContent = formatPercentage(kpis.overallWinRate);
+                        
+                        const dashboardProfitFactorEl = document.getElementById('dashboardProfitFactor');
+                        if (dashboardProfitFactorEl) dashboardProfitFactorEl.textContent = kpis.profitFactor !== Infinity ? kpis.profitFactor.toFixed(2) : 'Inf';
+                        
+                        const maxDrawdownEl = document.getElementById('dashboardMaxDrawdown'); 
+                        if (maxDrawdownEl) {
+                            maxDrawdownEl.textContent = formatCurrency(kpis.maxDrawdown, 'EUR'); 
+                            maxDrawdownEl.className = 'metric-value negative';
+                        }
+                        
+                        const chartTitleEl = document.getElementById('dashboardEquityCurveChartTitle');
+                        if(chartTitleEl) chartTitleEl.textContent = `Equity Curve (${getActiveTimeframeLabel(timeframe)})`;
+                        
+                        destroyChart(charts.dashboardEquityCurveChart);
+                        const eqCtx = document.getElementById('dashboardEquityCurveChart').getContext('2d');
+                        const labels = data.equityCurveForChart.map(point => point.date ? new Date(point.date).toLocaleDateString(navigator.language || 'es-ES', {day:'2-digit', month:'short'}) : '');
+                        const equityData = data.equityCurveForChart.map(point => point.equity);
+                        if(equityData.length === 0) { 
+                            eqCtx.clearRect(0, 0, eqCtx.canvas.width, eqCtx.canvas.height); 
+                            eqCtx.textAlign = "center"; 
+                            eqCtx.fillText("No data for timeframe.", eqCtx.canvas.width/2, eqCtx.canvas.height/2); 
+                        } else { 
+                            charts.dashboardEquityCurveChart = new Chart(eqCtx, { 
+                                type: 'line', 
+                                data: { 
+                                    labels: labels, 
+                                    datasets: [{ 
+                                        label: 'Cumulative P&L (€)', 
+                                        data: equityData, 
+                                        borderColor: 'var(--primary-color)', 
+                                        backgroundColor: 'rgba(37, 99, 235, 0.1)', 
+                                        fill: true, 
+                                        tension: 0.1, 
+                                        pointRadius: equityData.length < 100 ? 3 : 0, 
+                                        pointHoverRadius: 5 
+                                    }] 
+                                }, 
+                                options: { 
+                                    responsive: true, 
+                                    maintainAspectRatio: false, 
+                                    scales: { 
+                                        y: { beginAtZero: false }, 
+                                        x: { ticks: { autoSkip: true, maxTicksLimit: equityData.length > 60 ? 10 : 20 }}
+                                    }, 
+                                    plugins: { 
+                                        tooltip: { 
+                                            callbacks: { 
+                                                title: function(tooltipItems) { 
+                                                    const dataIndex = tooltipItems[0].dataIndex; 
+                                                    return data.equityCurveForChart[dataIndex] ? new Date(data.equityCurveForChart[dataIndex].date).toLocaleDateString(navigator.language || 'es-ES') : ''; 
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                        
+                        const gp = data.goalProgress; 
+                        const goalProgressTextEl = document.getElementById('goalProgressText');
+                        if (goalProgressTextEl) goalProgressTextEl.innerHTML = `Target: ${formatCurrency(gp.targetValue, 'EUR')} <br> Current: ${formatCurrency(gp.currentValue, 'EUR')}`; 
+                        
+                        const progressBar = document.getElementById('goalProgressBar'); 
+                        if (progressBar) {
+                            progressBar.style.width = gp.percentage.toFixed(2) + '%'; 
+                            progressBar.textContent = gp.percentage.toFixed(0) + '%'; 
+                            progressBar.className = 'progress-bar'; 
+                            if (gp.percentage < 33) progressBar.classList.add('bg-danger'); 
+                            else if (gp.percentage < 66) progressBar.classList.add('bg-warning'); 
+                            else progressBar.classList.add('bg-success');
+                        }
+
+                        const recentTradesTableBody = document.getElementById('dashboardRecentTradesTableBody'); 
+                        if (recentTradesTableBody) {
+                            recentTradesTableBody.innerHTML = '';
+                            if (data.recentTrades && data.recentTrades.length > 0) { 
+                                data.recentTrades.forEach(trade => { 
+                                    const pnlClass = (parseFloat(trade.pnlEUR) || 0) >= 0 ? 'positive' : 'negative'; 
+                                    const dateDisplay = trade.date ? new Date(trade.date).toLocaleDateString(navigator.language || 'es-ES', {day:'2-digit', month:'2-digit', year:'2-digit'}) : 'N/A'; 
+                                    recentTradesTableBody.innerHTML += `<tr class="clickable-trade-row" data-trade-id="${escapeHtml(String(trade.id || ''))}"><td><strong>${escapeHtml(trade.symbol || 'N/A')}</strong></td><td class="${pnlClass}">${formatCurrency(trade.pnlEUR, 'EUR')}</td><td>${escapeHtml(dateDisplay)}</td><td><span class="badge badge-${trade.status === 'Closed' ? 'secondary' : 'info'}">${escapeHtml(trade.status)}</span></td></tr>`;
+                                });
+                            } else { 
+                                recentTradesTableBody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No recent trades.</td></tr>'; 
+                            }
+                        }
+                        const lastRefreshedEl = document.getElementById('dashboardLastRefreshed');
+                        if (lastRefreshedEl) lastRefreshedEl.textContent = new Date().toLocaleTimeString();
+                    } else { 
+                        showToast(`Dashboard data error: ${data.error || 'Unknown error'}`, 'error'); 
+                    }
+                })
+                .withFailureHandler(err => { 
+                    hideLoading(); 
+                    showToast(`Failed to fetch dashboard data: ${err.message}`, 'error'); 
+                }); 
+        }
+        function getActiveTimeframeLabel(timeframe) { 
+            if (timeframe === "1M") return "Last Month"; 
+            if (timeframe === "3M") return "Last 3 Months"; 
+            if (timeframe === "YTD") return "Year-to-Date"; 
+            if (timeframe === "ALL") return "All Time"; 
+            return timeframe || "All Time"; 
+        }
+
+        // --- TRADE MANAGEMENT (CRUD, Filters, CSV, Bulk Actions) ---
+        let selectedTradeIds = new Set();
+        function submitTrade() { 
+            showLoading();
+            const tradeData = {
+                [getHeaderName('Date In')]: document.getElementById('tradeDateIn').value || null,
+                [getHeaderName('Date Out')]: document.getElementById('tradeDateOut').value || null,
+                [getHeaderName('SYMBOL')]: document.getElementById('tradeSymbol').value.toUpperCase(),
+                [getHeaderName('AssetType')]: document.getElementById('tradeAssetType').value,
+                [getHeaderName('ACTION')]: document.getElementById('tradeAction').value,
+                [getHeaderName('SHARES')]: parseFloat(document.getElementById('tradeShares').value),
+                [getHeaderName('CallPriceUSD')]: parseFloat(document.getElementById('tradeCallPriceUSD').value),
+                [getHeaderName('InvestmentEUR')]: parseFloat(document.getElementById('tradeInvestmentEUR').value) || 0,
+                [getHeaderName('ResultEUR')]: parseFloat(document.getElementById('tradeResultEUR').value) || 0,
+                [getHeaderName('STRATEGY')]: document.getElementById('tradeStrategy').value,
+                [getHeaderName('NOTES')]: document.getElementById('tradeNotes').value
+            };
+            if (!tradeData[getHeaderName('Date In')] || 
+                !tradeData[getHeaderName('SYMBOL')] || 
+                isNaN(tradeData[getHeaderName('SHARES')]) || 
+                isNaN(tradeData[getHeaderName('CallPriceUSD')])) { 
+                showToast('Please fill Date In, Symbol, Shares, and Price.', 'error'); 
+                hideLoading(); 
+                return; 
+            }
+            google.script.run
+                .withSuccessHandler(r => { 
+                    if (r.success) { 
+                        showToast(r.message, 'success'); 
+                        clearAddTradeForm(); 
+                        fetchAllData(); 
+                    } else { 
+                        showToast(`Error: ${r.message}`, 'error'); 
+                    }
+                    hideLoading(); // Ensure loading is hidden in both cases
+                })
+                .withFailureHandler(e => { 
+                    showToast(`Server error: ${e.message}`, 'error'); 
+                    hideLoading(); 
+                })
+                .addTrade(tradeData);
+        }
+        window.clearAddTradeForm = function() { 
+            document.getElementById('addTradeForm').reset(); 
+            const tradeDateInEl = document.getElementById('tradeDateIn');
+            if(tradeDateInEl) {
+                tradeDateInEl.valueAsDate = new Date();
+            }
+            const tradeDateOutEl = document.getElementById('tradeDateOut');
+            if(tradeDateOutEl) {
+                tradeDateOutEl.value = ''; 
+            }
+        };
+        function updateTradesTable(tradesToDisplay) { 
+            const tbody = document.getElementById('tradesTableBody');
+            const colspan = document.querySelector('#tradesTableBody').closest('table').querySelector('thead tr').cells.length;
+            if (!tradesToDisplay || tradesToDisplay.length === 0) { 
+                tbody.innerHTML = `<tr><td colspan="${colspan}" class="text-center text-muted py-4">${allTrades.length === 0 ? 'No trades. Add one.' : 'No trades match filters.'}</td></tr>`; 
+                clearSelectionsAndToolbar(); 
+                return; 
+            }
+            const idCol = getHeaderName("ID"), dateInCol = getHeaderName("Date In"), dateOutCol = getHeaderName("Date Out"), 
+                  symbolCol = getHeaderName("SYMBOL"), assetTypeCol = getHeaderName("AssetType"), actionCol = getHeaderName("ACTION"), 
+                  sharesCol = getHeaderName("SHARES"), priceCol = getHeaderName("CallPriceUSD"), investmentCol = getHeaderName("InvestmentEUR"), 
+                  resultCol = getHeaderName("ResultEUR"), strategyCol = getHeaderName("STRATEGY");
+            
+            tbody.innerHTML = tradesToDisplay
+                .sort((a,b) => { 
+                    const dA = new Date(a[dateInCol]||0);
+                    const dB = new Date(b[dateInCol]||0); 
+                    if (dB < dA) return -1; 
+                    if (dB > dA) return 1; 
+                    return (parseInt(b[idCol])||0) - (parseInt(a[idCol])||0); 
+                })
+                .map(trade => { 
+                    const tId = String(trade[idCol]||''); 
+                    const isSel = selectedTradeIds.has(tId); 
+                    const inv = parseFloat(trade[investmentCol]); 
+                    const res = parseFloat(trade[resultCol]); 
+                    let rr = 'N/A'; 
+                    if(!isNaN(inv) && inv!==0 && !isNaN(res)) {
+                        rr=(res/inv).toFixed(2);
+                    }
+                    const resCls = res>0?'positive':(res<0?'negative':'neutral'); 
+                    const fmtDt = (dStr) => dStr ? new Date(dStr).toLocaleDateString(navigator.language||'es-ES', {year:'numeric',month:'2-digit',day:'2-digit'}) : 'N/A'; 
+                    return `<tr>
+                                <td><input type="checkbox" class="trade-row-checkbox" data-trade-id="${escapeHtml(tId)}" ${isSel?'checked':''}></td>
+                                <td>${escapeHtml(tId)}</td>
+                                <td>${fmtDt(trade[dateInCol])}</td>
+                                <td>${fmtDt(trade[dateOutCol])}</td>
+                                <td><strong>${escapeHtml(trade[symbolCol]||'N/A')}</strong></td>
+                                <td>${escapeHtml(trade[assetTypeCol]||'N/A')}</td>
+                                <td><span class="badge badge-${(trade[actionCol]||'').toUpperCase()==='BUY'?'success':'danger'}">${escapeHtml(trade[actionCol]||'N/A')}</span></td>
+                                <td>${trade[sharesCol]||'N/A'}</td>
+                                <td>${formatCurrency(trade[priceCol],'USD')}</td>
+                                <td>${formatCurrency(inv,'EUR')}</td>
+                                <td class="${resCls}">${formatCurrency(res,'EUR')}</td>
+                                <td class="${parseFloat(rr)>0?'positive':(parseFloat(rr)<0?'negative':'neutral')}">${rr}</td>
+                                <td>${escapeHtml(trade[strategyCol]||'N/A')}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary btn-enhanced mr-1" onclick="initiateEditTrade('${escapeHtml(tId)}')">✏️</button>
+                                    <button class="btn btn-sm btn-outline-danger btn-enhanced" onclick="deleteTradeClicked('${escapeHtml(tId)}')">🗑️</button>
+                                </td>
+                            </tr>`;
+                }).join('');
+            updateBulkActionToolbar();
+        }
+        window.deleteTradeClicked = function(tradeId) { 
+            if (confirm(`Are you sure you want to delete trade ID ${tradeId}? This will call the server to delete it permanently.`)) { 
+                showLoading();
+                google.script.run
+                    .withSuccessHandler(response => {
+                        hideLoading();
+                        if (response.success) {
+                            showToast(response.message || `Trade ID ${tradeId} deleted.`, 'success');
+                            fetchAllData(); 
+                        } else {
+                            showToast(response.message || `Failed to delete trade ID ${tradeId}.`, 'error');
+                        }
+                    }) 
+                    .withFailureHandler(error => {
+                        hideLoading();
+                        showToast(`Error deleting trade: ${error.message}`, 'error');
+                    }) 
+                    .bulkDeleteTrades([tradeId]); 
+            } 
+        }; 
+        window.initiateEditTrade = function(tradeId) { 
+            const idCol = getHeaderName("ID"); 
+            const trade = allTrades.find(t => String(t[idCol]) === String(tradeId)); 
+            if (trade) { 
+                document.getElementById('editTradeId').value = trade[idCol];
+                document.getElementById('editTradeSymbol').value = trade[getHeaderName('SYMBOL')] || '';
+                document.getElementById('editTradeAssetType').value = trade[getHeaderName('AssetType')] || '';
+                document.getElementById('editTradeAction').value = trade[getHeaderName('ACTION')] || 'BUY';
+                document.getElementById('editTradeShares').value = trade[getHeaderName('SHARES')] || '';
+                document.getElementById('editTradeCallPriceUSD').value = trade[getHeaderName('CallPriceUSD')] || '';
+                const dateInValue = trade[getHeaderName('Date In')];
+                document.getElementById('editTradeDateIn').value = dateInValue ? new Date(dateInValue).toISOString().split('T')[0] : '';
+                const dateOutValue = trade[getHeaderName('Date Out')];
+                document.getElementById('editTradeDateOut').value = dateOutValue ? new Date(dateOutValue).toISOString().split('T')[0] : '';
+                document.getElementById('editTradeInvestmentEUR').value = trade[getHeaderName('InvestmentEUR')] || '';
+                document.getElementById('editTradeResultEUR').value = trade[getHeaderName('ResultEUR')] || '';
+                document.getElementById('editTradeStrategy').value = trade[getHeaderName('STRATEGY')] || '';
+                document.getElementById('editTradeNotes').value = trade[getHeaderName('NOTES')] || '';
+                $('#editTradeModal').modal('show'); 
+            } else { 
+                showToast('Trade not found.', 'error'); 
+            }
+        };
+        window.submitTradeUpdate = function() { 
+            showLoading(); 
+            const updatedTradeData = { 
+                ID: document.getElementById('editTradeId').value, 
+                [getHeaderName('Date In')]: document.getElementById('editTradeDateIn').value || null,
+                [getHeaderName('Date Out')]: document.getElementById('editTradeDateOut').value || null,
+                [getHeaderName('SYMBOL')]: document.getElementById('editTradeSymbol').value.toUpperCase(),
+                [getHeaderName('AssetType')]: document.getElementById('editTradeAssetType').value,
+                [getHeaderName('ACTION')]: document.getElementById('editTradeAction').value,
+                [getHeaderName('SHARES')]: parseFloat(document.getElementById('editTradeShares').value),
+                [getHeaderName('CallPriceUSD')]: parseFloat(document.getElementById('editTradeCallPriceUSD').value),
+                [getHeaderName('InvestmentEUR')]: parseFloat(document.getElementById('editTradeInvestmentEUR').value) || 0,
+                [getHeaderName('ResultEUR')]: parseFloat(document.getElementById('editTradeResultEUR').value) || 0,
+                [getHeaderName('STRATEGY')]: document.getElementById('editTradeStrategy').value,
+                [getHeaderName('NOTES')]: document.getElementById('editTradeNotes').value
+            }; 
+            if (!updatedTradeData[getHeaderName('Date In')] || 
+                !updatedTradeData[getHeaderName('SYMBOL')] || 
+                isNaN(updatedTradeData[getHeaderName('SHARES')]) || 
+                isNaN(updatedTradeData[getHeaderName('CallPriceUSD')])) { 
+                showToast('Please fill Date In, Symbol, Shares, and Price.', 'error'); 
+                hideLoading(); 
+                return; 
+            }
+            google.script.run
+                .withSuccessHandler(r => { 
+                    hideLoading(); 
+                    if (r.success) { 
+                        $('#editTradeModal').modal('hide'); 
+                        showToast(r.message, 'success'); 
+                        fetchAllData(); 
+                    } else { 
+                        showToast(`Error: ${r.message}`, 'error'); 
+                    }
+                })
+                .withFailureHandler(e => { 
+                    hideLoading(); 
+                    showToast(`Server error: ${e.message}`, 'error'); 
+                })
+                .updateTrade(updatedTradeData); 
+        };
+        function filterAndDisplayTrades() { 
+            clearSelectionsAndToolbar(); 
+            showLoading(); 
+            const symbolFilter = document.getElementById('filterSymbol').value.toUpperCase().trim(); 
+            const strategyFilter = document.getElementById('filterStrategy').value; 
+            const assetTypeFilter = document.getElementById('filterAssetType').value; 
+            const dateInStartFilter = document.getElementById('filterDateInStart').value; 
+            const dateInEndFilter = document.getElementById('filterDateInEnd').value; 
+            const symbolH = getHeaderName("SYMBOL"), strategyH = getHeaderName("STRATEGY"), 
+                  assetTypeH = getHeaderName("AssetType"), dateInH = getHeaderName("Date In"); 
+            let filtered = allTrades; 
+            if (symbolFilter) {
+                filtered = filtered.filter(t => (t[symbolH]||'').toUpperCase().includes(symbolFilter)); 
+            }
+            if (strategyFilter) {
+                filtered = filtered.filter(t => t[strategyH] === strategyFilter); 
+            }
+            if (assetTypeFilter) {
+                filtered = filtered.filter(t => t[assetTypeH] === assetTypeFilter); 
+            }
+            if (dateInStartFilter) { 
+                const sd = new Date(dateInStartFilter); 
+                sd.setHours(0,0,0,0); 
+                filtered = filtered.filter(t => t[dateInH] && new Date(t[dateInH]) >= sd); 
+            } 
+            if (dateInEndFilter) { 
+                const ed = new Date(dateInEndFilter); 
+                ed.setHours(23,59,59,999); 
+                filtered = filtered.filter(t => t[dateInH] && new Date(t[dateInH]) <= ed); 
+            } 
+            updateTradesTable(filtered); 
+            hideLoading(); 
+        }
+        function processImportResult(response) {
+            hideLoading();
+            const summaryMsgEl = document.getElementById('importSummaryMessage');
+            const errorsSectionEl = document.getElementById('importErrorsSection');
+            const errorsListEl = document.getElementById('importErrorsList');
+            
+            summaryMsgEl.textContent = ''; 
+            errorsListEl.innerHTML = ''; 
+            errorsSectionEl.style.display = 'none';
+
+            if (response && typeof response === 'object') {
+                summaryMsgEl.textContent = response.message || `${response.successfullyImported || 0} trades processed.`;
+                let toastType = 'info';
+                if (response.failedImports > 0 && response.successfullyImported > 0) { 
+                    toastType = 'warning'; 
+                    summaryMsgEl.textContent = `${response.successfullyImported} imported, ${response.failedImports} failed.`; 
+                } else if (response.failedImports > 0) { 
+                    toastType = 'error'; 
+                    summaryMsgEl.textContent = `Import failed for ${response.failedImports} rows.`; 
+                } else if (response.successfullyImported > 0) { 
+                    toastType = 'success'; 
+                    summaryMsgEl.textContent = `${response.successfullyImported} trades imported!`; 
+                } else if (!response.success && response.message) { 
+                    toastType = 'error'; 
+                    summaryMsgEl.textContent = response.message; 
+                }
+                showToast(summaryMsgEl.textContent, toastType);
+
+                if (response.results && response.results.length > 0) { 
+                    let hasErrors = false; 
+                    response.results.forEach(res => { 
+                        if (res.status === "Failed") { 
+                            hasErrors = true; 
+                            const p = document.createElement('p'); 
+                            p.innerHTML = `<strong>Row ${res.rowNumber}:</strong> ${escapeHtml(res.message||'Err')}<br><small class="error-row-data">Data: ${escapeHtml(String(res.csvRowData).substring(0,150))}</small>`; 
+                            errorsListEl.appendChild(p);
+                        }
+                    });
+                    if(hasErrors) {
+                        errorsSectionEl.style.display = 'block';
+                    }
+                }
+                $('#importResultsModal').modal('show');
+                if (response.successfullyImported > 0) {
+                    fetchAllData();
+                }
+            } else { 
+                summaryMsgEl.textContent = 'Unexpected response.'; 
+                showToast('Unexpected response from import.', 'error'); 
+                $('#importResultsModal').modal('show'); 
+            }
+        }
+        function processImportError(error) { 
+            hideLoading(); 
+            showToast(`CSV Import Error: ${error.message}`, 'error'); 
+            console.error("CSV Import Server Error:", error); 
+        }
+        function processCsvTemplateHeaders(headersArray) {
+            hideLoading();
+            if (headersArray && headersArray.error) { 
+                showToast(`Error getting template: ${headersArray.error}`, 'error'); 
+                return; 
+            }
+            if (Array.isArray(headersArray) && headersArray.length > 0) { 
+                const csvHdr = headersArray.map(h => {
+                    let escH = String(h || '').replace(/"/g, '""'); 
+                    if (escH.includes(',') || escH.includes('"') || escH.includes('\n')) {
+                        escH = `"${escH}"`; 
+                    }
+                    return escH;
+                }).join(',') + '\n'; 
+                const blob = new Blob([csvHdr], { type: 'text/csv;charset=utf-8;' }); 
+                const link = document.createElement("a"); 
+                if (link.download !== undefined) { 
+                    const url = URL.createObjectURL(blob); 
+                    link.setAttribute("href", url); 
+                    link.setAttribute("download", "trades_template.csv"); 
+                    document.body.appendChild(link); 
+                    link.click(); 
+                    document.body.removeChild(link); 
+                    URL.revokeObjectURL(url); 
+                    showToast("Template downloaded!", "success"); 
+                } else { 
+                    showToast("Download not supported.", "warning"); 
+                }
+            } else { 
+                showToast("Failed to get template headers.", "error"); 
+            }
+        }
+        function processCsvTemplateError(error) { 
+            hideLoading(); 
+            showToast(`Error downloading template: ${error.message}`, 'error'); 
+        }
+        function updateBulkActionToolbar() { 
+            const toolbar = document.getElementById('tradesTableBulkActionToolbar'); 
+            const countSpan = document.getElementById('selectedTradesCount'); 
+            const selectAllCb = document.getElementById('selectAllTradesCheckbox'); 
+            if (!toolbar || !countSpan || !selectAllCb) return; 
+            
+            countSpan.textContent = selectedTradeIds.size; 
+            toolbar.style.display = selectedTradeIds.size > 0 ? 'block' : 'none'; 
+            
+            const visCbs = Array.from(document.querySelectorAll('#tradesTableBody .trade-row-checkbox')); 
+            const allVisSel = visCbs.length > 0 && visCbs.every(cb => selectedTradeIds.has(cb.dataset.tradeId)); 
+            
+            if (visCbs.length === 0) { 
+                selectAllCb.checked = false; 
+                selectAllCb.indeterminate = false; 
+            } else if (allVisSel) { 
+                selectAllCb.checked = true; 
+                selectAllCb.indeterminate = false; 
+            } else if (selectedTradeIds.size > 0 && visCbs.some(cb => selectedTradeIds.has(cb.dataset.tradeId))) { 
+                selectAllCb.checked = false; 
+                selectAllCb.indeterminate = true; 
+            } else { 
+                selectAllCb.checked = false; 
+                selectAllCb.indeterminate = false; 
+            }
+        }
+        function clearSelectionsAndToolbar() { 
+            selectedTradeIds.clear(); 
+            const selectAllCb = document.getElementById('selectAllTradesCheckbox'); 
+            if (selectAllCb) {
+                selectAllCb.checked = false;
+            }
+            updateBulkActionToolbar(); 
+        }
+        window.exportTrades = function() { 
+            if(allTrades.length===0){
+                showToast("No trades to export.","info");
+                return;
+            }
+            const hdrStr = sheetHeaders.join(",")+"\n";
+            const csvContent = allTrades.map(t => 
+                sheetHeaders.map(h => {
+                    let v = t[h];
+                    if (v === null || v === undefined) return "";
+                    if (h === getHeaderName("Date In") || h === getHeaderName("Date Out")) { 
+                        return v ? new Date(v).toISOString().split('T')[0] : "";
+                    }
+                    if (typeof v === 'string') return `"${v.replace(/"/g,'""')}"`;
+                    return v;
+                }).join(",")
+            ).join("\n");
+            const csv = "data:text/csv;charset=utf-8," + hdrStr + csvContent;
+            const link = document.createElement("a");
+            link.setAttribute("href", encodeURI(csv));
+            link.setAttribute("download", "trades_export.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast("Trades exported.","success");
+        };
+
+        function updateManagementQuickStats() {
+            const portfolioValueEl = document.getElementById('totalPortfolioValue');
+            const tradesCountEl = document.getElementById('totalTradesCount');
+            const winRateStatEl = document.getElementById('winRateStat');
+            const avgReturnStatEl = document.getElementById('avgReturnStat');
+
+            if (allAnalyticsData && !allAnalyticsData.error) {
+                const initialCapital = parseFloat(userGoals.capitalForTrading) || 0; 
+                const totalNetPnl = parseFloat(allAnalyticsData.totalNetProfitEUR) || 0;
+                const currentPortfolioValue = initialCapital + totalNetPnl;
+                
+                if (portfolioValueEl) {
+                    portfolioValueEl.textContent = formatCurrency(currentPortfolioValue, 'EUR');
+                    portfolioValueEl.className = `metric-value ${currentPortfolioValue >= initialCapital ? 'positive' : 'negative'}`;
+                }
+                if (tradesCountEl) {
+                    tradesCountEl.textContent = (allAnalyticsData.winningTradesCount || 0) + (allAnalyticsData.losingTradesCount || 0);
+                }
+                if (winRateStatEl) { 
+                     winRateStatEl.textContent = formatPercentage(allAnalyticsData.winRate || 0);
+                     winRateStatEl.className = `metric-value ${(allAnalyticsData.winRate || 0) >= 0.5 ? 'positive' : 'negative'}`;
+                }
+                if (avgReturnStatEl) {
+                    avgReturnStatEl.textContent = (allAnalyticsData.averageRiskRewardRatio || 0).toFixed(2); 
+                }
+            } else { 
+                if (portfolioValueEl) { portfolioValueEl.textContent = 'N/A'; }
+                if (tradesCountEl) { tradesCountEl.textContent = '0'; }
+                if (winRateStatEl) { winRateStatEl.textContent = '0%'; }
+                if (avgReturnStatEl) { avgReturnStatEl.textContent = '0.00'; }
+            }
+        }
+
+        // --- ANALYTICS TAB ---
+        function populateAnalyticsStrategyFilter() { 
+            updateStrategyDropdownsInFormsAndFilters(); 
+        }
+        function populateAnalyticsAssetTypeFilter() { 
+            updateAssetTypeDropdownsInFormsAndFilters(); 
+        }
+        function fetchAndRenderAnalytics(filters) {
+            currentAnalyticsFilters = filters;
+            showLoading();
+            document.getElementById('noAnalyticsDataMessage').style.display = 'none';
+            clearCharts();
+            clearAnalyticsTakeaways();
+        
+            google.script.run
+                .withSuccessHandler(analyticsResult => {
+                    processAnalytics(analyticsResult);
+                    if (allAnalyticsData && !allAnalyticsData.error) {
+                        populateAnalyticsFilteredYearSelector();
+                        const yearSelector = document.getElementById('analyticsFilteredYearSelector');
+                        if (yearSelector.options.length > 0 && yearSelector.value && yearSelector.value !== "No Data") {
+                            renderAnalyticsCharts(yearSelector.value);
+                        } else if (yearSelector.options.length === 0 || yearSelector.value === "No Data") {
+                            destroyChart(charts.performanceChart);
+                            destroyChart(charts.successFailChart);
+                            destroyChart(charts.priceRangePerformanceChart);
+                            destroyChart(charts.monthlyInvestmentChart);
+                        }
+        
+                        if (allAnalyticsData.pnlByDayOfWeek) {
+                            renderPnlByDayOfWeekChart(allAnalyticsData.pnlByDayOfWeek);
+                        }
+                        if (allAnalyticsData.winRateByDayOfWeek) {
+                            renderWinRateByDayOfWeekChart(allAnalyticsData.winRateByDayOfWeek);
+                        }
+                        if (allAnalyticsData.pnlByMonthCategory) {
+                            renderPnlByMonthCategoryChart(allAnalyticsData.pnlByMonthCategory);
+                        }
+                        if (allAnalyticsData.winRateByMonthCategory) {
+                            renderWinRateByMonthCategoryChart(allAnalyticsData.winRateByMonthCategory);
+                        }
+                        if (allAnalyticsData.pnlByTopSymbols) {
+                            renderPnlByTopSymbolsChart(allAnalyticsData.pnlByTopSymbols);
+                        }
+                        displayAnalyticsTakeaways(allAnalyticsData.takeaways);
+        
+                        const noY = !(yearSelector.options.length > 0 && yearSelector.value && yearSelector.value !== "No Data");
+                        const noD = !(allAnalyticsData.pnlByDayOfWeek && allAnalyticsData.pnlByDayOfWeek.some(d => d.totalTrades > 0));
+                        const noM = !(allAnalyticsData.pnlByMonthCategory && allAnalyticsData.pnlByMonthCategory.some(m => m.totalTrades > 0));
+                        const noS = !(allAnalyticsData.pnlByTopSymbols && allAnalyticsData.pnlByTopSymbols.length > 0);
+        
+                        if (noY && noD && noM && noS && (!allAnalyticsData.years || allAnalyticsData.years.length === 0)) {
+                            document.getElementById('noAnalyticsDataMessage').style.display = 'block';
+                        }
+                    } else {
+                        showToast("Error processing analytics.", "error");
+                        document.getElementById('noAnalyticsDataMessage').style.display = 'block';
+                    }
+                    hideLoading(); 
+                })
+                .withFailureHandler(err => {
+                    hideLoading();
+                    showToast(`Failed to fetch analytics: ${err.message}`, 'error');
+                    document.getElementById('noAnalyticsDataMessage').style.display = 'block';
+                    clearCharts();
+                })
+                .getAnalyticsData(filters);
+        
+            google.script.run
+                .withSuccessHandler(renderOverallEquityCurveChart) // hideLoading is called within this on success/failure
+                .withFailureHandler(err => {
+                    hideLoading(); // Also ensure it's hidden on direct failure of this call
+                    showToast(`Failed to load overall equity curve: ${err.message}`, 'error');
+                    destroyChart(charts.overallEquityCurveChart);
+                })
+                .getEquityCurveAndOverallMaxDD("ALL");
+        }
+        
+        function populateAnalyticsFilteredYearSelector() { 
+            const selector = document.getElementById('analyticsFilteredYearSelector'); 
+            selector.innerHTML = ''; 
+            if (allAnalyticsData.years && allAnalyticsData.years.length > 0) { 
+                allAnalyticsData.years.forEach(year => { 
+                    const option = document.createElement('option'); 
+                    option.value = year; 
+                    option.textContent = year; 
+                    selector.appendChild(option); 
+                }); 
+                selector.value = allAnalyticsData.years[allAnalyticsData.years.length - 1]; 
+            } else { 
+                const option = document.createElement('option'); 
+                option.textContent = "No Data"; 
+                selector.appendChild(option); 
+                clearCharts(); // Good to clear if no year data
+            } 
+        }
+        function renderAnalyticsCharts(year) { 
+            document.querySelectorAll('.selected-year-label').forEach(el => el.textContent = year); 
+            if (!allAnalyticsData || 
+                !allAnalyticsData.revenueByMonth || !allAnalyticsData.revenueByMonth[year] ||
+                !allAnalyticsData.investmentByMonth || !allAnalyticsData.investmentByMonth[year] ||
+                !allAnalyticsData.tradesByMonth || !allAnalyticsData.tradesByMonth[year] || 
+                !allAnalyticsData.performanceByPrice || !allAnalyticsData.performanceByPrice[year] ) { 
+                destroyChart(charts.performanceChart); 
+                destroyChart(charts.successFailChart); 
+                destroyChart(charts.priceRangePerformanceChart); 
+                destroyChart(charts.monthlyInvestmentChart); 
+                return; 
+            } 
+            const yData = allAnalyticsData.revenueByMonth[year];
+            const iData = allAnalyticsData.investmentByMonth[year];
+            const tCountData = allAnalyticsData.tradesByMonth[year];
+            const pPerfData = allAnalyticsData.performanceByPrice[year];
+
+            destroyChart(charts.performanceChart); 
+            charts.performanceChart = new Chart(document.getElementById('performanceChart').getContext('2d'), {
+                type:'bar',
+                data:{
+                    labels:MONTH_NAMES_JS, 
+                    datasets:[{
+                        label:`Net P&L (€) - ${year}`,
+                        data:yData,
+                        backgroundColor:yData.map(d=>d>=0?'rgba(16,185,129,0.7)':'rgba(239,68,68,0.7)'),
+                        borderColor:yData.map(d=>d>=0?'rgba(16,185,129,1)':'rgba(239,68,68,1)'),
+                        borderWidth:1
+                    }]
+                },
+                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:false}}}
+            }); 
+            
+            destroyChart(charts.successFailChart); 
+            const sTrades = tCountData.reduce((s,m)=>s+(m.successful || 0),0);
+            const fTrades = tCountData.reduce((s,m)=>s+((m.total || 0)-(m.successful || 0)),0); 
+            charts.successFailChart = new Chart(document.getElementById('successFailChart').getContext('2d'), {
+                type:'doughnut',
+                data:{
+                    labels:['Successful','Failed'],
+                    datasets:[{
+                        data:[sTrades,fTrades],
+                        backgroundColor:['rgba(16,185,129,0.7)','rgba(239,68,68,0.7)'],
+                        borderColor:['rgba(16,185,129,1)','rgba(239,68,68,1)'],
+                        borderWidth:1
+                    }]
+                },
+                options:{responsive:true,maintainAspectRatio:false}
+            }); 
+            
+            destroyChart(charts.priceRangePerformanceChart); 
+            const pLabels = Object.keys(pPerfData || {});
+            const pData = Object.values(pPerfData || {}); 
+            charts.priceRangePerformanceChart = new Chart(document.getElementById('priceRangePerformanceChart').getContext('2d'), {
+                type:'bar',
+                data:{
+                    labels:pLabels,
+                    datasets:[{
+                        label:`P&L by Price Range - ${year}`,
+                        data:pData,
+                        backgroundColor:pData.map(d=>d>=0?'rgba(37,99,235,0.7)':'rgba(245,158,11,0.7)'),
+                        borderColor:pData.map(d=>d>=0?'rgba(37,99,235,1)':'rgba(245,158,11,1)'),
+                        borderWidth:1
+                    }]
+                },
+                options:{responsive:true,maintainAspectRatio:false,indexAxis:'y'}
+            }); 
+            
+            destroyChart(charts.monthlyInvestmentChart); 
+            charts.monthlyInvestmentChart = new Chart(document.getElementById('monthlyInvestmentChart').getContext('2d'), {
+                type:'line',
+                data:{
+                    labels:MONTH_NAMES_JS,
+                    datasets:[{
+                        label:`Investment (€) - ${year}`,
+                        data:iData,
+                        backgroundColor:'rgba(6,182,212,0.2)',
+                        borderColor:'rgba(6,182,212,1)',
+                        borderWidth:2,
+                        fill:true,
+                        tension:0.1
+                    }]
+                },
+                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
+            });
+        }
+        function renderOverallEquityCurveChart(data) { 
+            hideLoading(); // Ensure loading is hidden after data is processed
+            destroyChart(charts.overallEquityCurveChart); 
+            const canvas = document.getElementById('overallEquityCurveChart'); 
+            if (!canvas) return; 
+            const ctx = canvas.getContext('2d'); 
+            if (data && data.error) {
+                showToast(`Error: ${data.error}`, 'error'); 
+                ctx.clearRect(0,0,canvas.width,canvas.height); 
+                ctx.textAlign="center"; 
+                ctx.fillText(`Error: ${data.error}`,canvas.width/2,canvas.height/2); 
+                return;
+            } 
+            const eqPoints = data.equityCurveForChart; 
+            if (!eqPoints || eqPoints.length === 0) {
+                ctx.clearRect(0,0,canvas.width,canvas.height); 
+                ctx.textAlign="center"; 
+                ctx.fillText("No data.",canvas.width/2,canvas.height/2); 
+                return;
+            } 
+            const labels = eqPoints.map(p => p.date ? new Date(p.date).toLocaleDateString(navigator.language||'es-ES',{day:'2-digit',month:'short',year:'2-digit'}) : ''); 
+            const eqData = eqPoints.map(p => p.equity); 
+            charts.overallEquityCurveChart = new Chart(ctx, {
+                type:'line',
+                data:{
+                    labels:labels,
+                    datasets:[{
+                        label:'Overall Cumulative P&L (€)',
+                        data:eqData,
+                        borderColor:'var(--primary-color)',
+                        backgroundColor:'rgba(37,99,235,0.1)',
+                        fill:true,
+                        tension:0.1,
+                        pointRadius:eqData.length<150?2:0,
+                        pointHoverRadius:4
+                    }]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    scales:{
+                        y:{beginAtZero:false},
+                        x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0,maxTicksLimit:eqData.length>100?12:20}}
+                    }
+                }
+            });
+        }
+        function renderPnlByDayOfWeekChart(pnlData) { 
+            destroyChart(charts.pnlByDayOfWeekChart); 
+            const ctx = document.getElementById('pnlByDayOfWeekChart').getContext('2d'); 
+            const labels = pnlData.map(d => d.day); 
+            const dataValues = pnlData.map(d => d.pnl); 
+            const bgColors = dataValues.map(pnl => pnl >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'); 
+            const bdColors = dataValues.map(pnl => pnl >= 0 ? 'rgba(16,185,129,1)' : 'rgba(239,68,68,1)'); 
+            charts.pnlByDayOfWeekChart = new Chart(ctx, {
+                type:'bar',
+                data:{
+                    labels:labels,
+                    datasets:[{label:'Net P&L (€)',data:dataValues,backgroundColor:bgColors,borderColor:bdColors,borderWidth:1}]
+                },
+                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:false}}}
+            });
+        }
+        function renderWinRateByDayOfWeekChart(winRateData) { 
+            destroyChart(charts.winRateByDayOfWeekChart); 
+            const ctx = document.getElementById('winRateByDayOfWeekChart').getContext('2d'); 
+            const labels = winRateData.map(d => d.day); 
+            const dataValues = winRateData.map(d => d.winRate * 100); 
+            charts.winRateByDayOfWeekChart = new Chart(ctx, {
+                type:'bar',
+                data:{
+                    labels:labels,
+                    datasets:[{label:'Win Rate (%)',data:dataValues,backgroundColor:'rgba(37,99,235,0.7)',borderColor:'rgba(37,99,235,1)',borderWidth:1}]
+                },
+                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,max:100,ticks:{callback:function(v){return v+"%"}}}}}
+            });
+        }
+        function renderPnlByMonthCategoryChart(pnlData) { 
+            destroyChart(charts.pnlByMonthCategoryChart); 
+            const ctx = document.getElementById('pnlByMonthCategoryChart').getContext('2d'); 
+            const labels = pnlData.map(d => d.month); 
+            const dataValues = pnlData.map(d => d.pnl); 
+            const bgColors = dataValues.map(pnl => pnl >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'); 
+            const bdColors = dataValues.map(pnl => pnl >= 0 ? 'rgba(16,185,129,1)' : 'rgba(239,68,68,1)'); 
+            charts.pnlByMonthCategoryChart = new Chart(ctx, {
+                type:'bar',
+                data:{
+                    labels:labels,
+                    datasets:[{label:'Net P&L (€)',data:dataValues,backgroundColor:bgColors,borderColor:bdColors,borderWidth:1}]
+                },
+                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:false}}}
+            });
+        }
+        function renderWinRateByMonthCategoryChart(winRateData) { 
+            destroyChart(charts.winRateByMonthCategoryChart); 
+            const ctx = document.getElementById('winRateByMonthCategoryChart').getContext('2d'); 
+            const labels = winRateData.map(d => d.month); 
+            const dataValues = winRateData.map(d => d.winRate * 100); 
+            charts.winRateByMonthCategoryChart = new Chart(ctx, {
+                type:'bar',
+                data:{
+                    labels:labels,
+                    datasets:[{label:'Win Rate (%)',data:dataValues,backgroundColor:'rgba(37,99,235,0.7)',borderColor:'rgba(37,99,235,1)',borderWidth:1}]
+                },
+                options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true,max:100,ticks:{callback:function(v){return v+"%"}}}}}
+            });
+        }
+        function renderPnlByTopSymbolsChart(topSymbolsData) { 
+            destroyChart(charts.pnlByTopSymbolsChart); 
+            const ctx = document.getElementById('pnlByTopSymbolsChart').getContext('2d'); 
+            if (!topSymbolsData || topSymbolsData.length === 0) { 
+                ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); 
+                ctx.textAlign="center"; 
+                ctx.fillText("No symbol data.",ctx.canvas.width/2,ctx.canvas.height/2); 
+                return; 
+            } 
+            const labels = topSymbolsData.map(d => `${d.symbol} (${d.totalTrades})`); 
+            const dataValues = topSymbolsData.map(d => d.pnl); 
+            const bgColors = dataValues.map(pnl => pnl >= 0 ? 'rgba(16,185,129,0.7)' : 'rgba(239,68,68,0.7)'); 
+            const bdColors = dataValues.map(pnl => pnl >= 0 ? 'rgba(16,185,129,1)' : 'rgba(239,68,68,1)'); 
+            charts.pnlByTopSymbolsChart = new Chart(ctx, {
+                type:'bar',
+                data:{
+                    labels:labels,
+                    datasets:[{label:'Net P&L (€)',data:dataValues,backgroundColor:bgColors,borderColor:bdColors,borderWidth:1}]
+                },
+                options:{
+                    indexAxis:'y',
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    scales:{
+                        x:{beginAtZero:false,ticks:{callback:function(v){return formatCurrency(v,'EUR');}}},
+                        y:{ticks:{autoSkip:false}}
+                    },
+                    plugins:{
+                        legend:{display:false},
+                        tooltip:{callbacks:{
+                            label:function(c){
+                                let l=c.dataset.label||'';
+                                if(l)l+=': ';
+                                if(c.parsed.x!==null)l+=formatCurrency(c.parsed.x,'EUR');
+                                return l;
+                            }
+                        }}
+                    }
+                }
+            });
+        }
+        function displayAnalyticsTakeaways(takeaways) { 
+            const ids={
+                'pnlByDayOfWeek':'pnlByDayOfWeekChartTakeaway',
+                'winRateByDayOfWeek':'winRateByDayOfWeekChartTakeaway',
+                'pnlByMonthCategory':'pnlByMonthCategoryChartTakeaway',
+                'winRateByMonthCategory':'winRateByMonthCategoryChartTakeaway',
+                'pnlByTopSymbols':'pnlByTopSymbolsChartTakeaway',
+                'performanceByPrice':'priceRangePerformanceChartTakeaway'
+            }; 
+            if(takeaways && typeof takeaways ==='object'){
+                for(const k in ids){
+                    const el = document.getElementById(ids[k]);
+                    if(el){
+                        el.textContent = takeaways[k] || 'No specific takeaway.';
+                        el.style.fontStyle = takeaways[k] && takeaways[k]!=="Not enough data for analysis." && takeaways[k]!=="Not enough data." ? 'normal' : 'italic';
+                    }
+                }
+            } else {
+                clearAnalyticsTakeaways();
+            }
+        }
+        function clearAnalyticsTakeaways() { 
+            document.querySelectorAll('.takeaway-caption').forEach(el => {
+                el.innerHTML='<em>Loading...</em>'; 
+                el.style.fontStyle='italic';
+            });
+        }
+        
+        // --- GOALS & PROJECTIONS TAB ---
+        window.loadUserGoalsAndPopulateForm = function() { 
+            showLoading(); 
+            google.script.run
+                .withSuccessHandler(g => { 
+                    processGoals(g); 
+                    if (userGoals && !userGoals.error) { 
+                        document.getElementById('capitalForTrading').value = userGoals.capitalForTrading || 10000; 
+                        document.getElementById('roiTarget').value = (userGoals.roiTarget * 100).toFixed(2) || 20; 
+                        document.getElementById('lossPerFailedOpPercent').value = (userGoals.lossPerFailedOpPercent * 100).toFixed(2) || 5; 
+                        document.getElementById('taxesPerOp').value = userGoals.taxesPerOp || 10; 
+                        document.getElementById('avgInvestmentPerOp').value = userGoals.avgInvestmentPerOp || 5000; 
+                        document.getElementById('monthlyOpsTarget').value = userGoals.monthlyOpsTarget || 30; 
+                        document.getElementById('successfulOpsPercentTarget').value = (userGoals.successfulOpsPercentTarget * 100).toFixed(2) || 50; 
+                        document.getElementById('finalCapitalGoal').value = userGoals.finalCapitalGoal || 2000000; 
+                        showToast('User goals loaded.', 'info'); 
+                    } else { 
+                        showToast('Could not load goals.', 'warning'); 
+                    } 
+                    hideLoading(); 
+                })
+                .withFailureHandler(e => { 
+                    console.error("Error loading goals:", e); 
+                    showToast(`Error: ${e.message}`, 'error'); 
+                    hideLoading(); 
+                })
+                .loadUserGoals();
+        };
+        function saveAndCalculateProjections() { 
+            const gData = {
+                capitalForTrading:parseFloat(document.getElementById('capitalForTrading').value),
+                roiTarget:parseFloat(document.getElementById('roiTarget').value)/100,
+                lossPerFailedOpPercent:parseFloat(document.getElementById('lossPerFailedOpPercent').value)/100,
+                taxesPerOp:parseFloat(document.getElementById('taxesPerOp').value),
+                avgInvestmentPerOp:parseFloat(document.getElementById('avgInvestmentPerOp').value),
+                monthlyOpsTarget:parseInt(document.getElementById('monthlyOpsTarget').value),
+                successfulOpsPercentTarget:parseFloat(document.getElementById('successfulOpsPercentTarget').value)/100,
+                finalCapitalGoal:parseFloat(document.getElementById('finalCapitalGoal').value)
+            }; 
+            showLoading(); 
+            google.script.run
+                .withSuccessHandler(sRsp => { 
+                    if (sRsp.success) { 
+                        showToast(sRsp.message, 'success'); 
+                        google.script.run
+                            .withSuccessHandler(pRsp => { 
+                                if (pRsp.error) { 
+                                    showToast(`Projection Error: ${pRsp.error}`, 'error'); 
+                                    document.getElementById('projectionsDisplay').style.display = 'none'; 
+                                } else { 
+                                    displayProjections(pRsp); 
+                                    showToast('Projections calculated.', 'info'); 
+                                } 
+                                hideLoading(); 
+                            })
+                            .withFailureHandler(e => { 
+                                showToast(`Calc Error: ${e.message}`, 'error'); 
+                                hideLoading(); 
+                            })
+                            .calculateProjections(gData); 
+                    } else { 
+                        showToast(`Save Error: ${sRsp.message}`, 'error'); 
+                        hideLoading(); 
+                    }
+                })
+                .withFailureHandler(e => { 
+                    showToast(`Server error: ${e.message}`, 'error'); 
+                    hideLoading(); 
+                })
+                .saveUserGoals(gData);
+        }
+        function displayProjections(projections) { 
+            document.getElementById('projectionsDisplay').style.display='block'; 
+            document.getElementById('projMonthlyNetGain').textContent=formatCurrency(projections.calculatedMonthlyNetGain,'EUR'); 
+            document.getElementById('projMonthlyGainPercent').textContent=formatPercentage(projections.monthlyGainPercent); 
+            document.getElementById('projMonthsToGoal').textContent=projections.monthsToGoal; 
+            document.getElementById('projSuccessDate').textContent=projections.successDate; 
+            document.getElementById('projYearsToGoal').textContent=projections.yearsToGoal; 
+            document.getElementById('projProfitFactor').textContent = projections.projectedProfitFactor !== Infinity ? projections.projectedProfitFactor.toFixed(2) : 'Inf'; 
+            const opsTBody=document.getElementById('simulatedOpsTableBody'); 
+            opsTBody.innerHTML=''; 
+            if(projections.simulatedOperations && projections.simulatedOperations.length>0){
+                projections.simulatedOperations.forEach(op=>{
+                    opsTBody.innerHTML+=`<tr>
+                                            <td>${op.op}</td>
+                                            <td class="${op.type==='Success'?'text-success':'text-danger'}">${op.type}</td>
+                                            <td>${formatCurrency(op.investment,'EUR')}</td>
+                                            <td>${formatCurrency(op.outcome,'EUR')}</td>
+                                            <td>${formatCurrency(op.commission,'EUR')}</td>
+                                            <td class="${op.netOutcome>=0?'text-success':'text-danger'}">${formatCurrency(op.netOutcome,'EUR')}</td>
+                                            <td>${formatCurrency(op.cumulativeNet,'EUR')}</td>
+                                         </tr>`;
+                });
+            } else {
+                opsTBody.innerHTML='<tr><td colspan="7" class="text-center">No simulated ops.</td></tr>';
+            }
+        }
+        function loadHistoricalAverages() { 
+            showLoading(); 
+            google.script.run
+                .withSuccessHandler(d => { 
+                    hideLoading(); 
+                    if (d.success) { 
+                        document.getElementById('successfulOpsPercentTarget').value = (d.historicalWinRate * 100).toFixed(2); 
+                        document.getElementById('roiTarget').value = (d.suggestedRoiTargetPercent * 100).toFixed(2); 
+                        document.getElementById('lossPerFailedOpPercent').value = (d.suggestedLossPerFailedOpPercent * 100).toFixed(2); 
+                        document.getElementById('avgInvestmentPerOp').value = d.historicalAvgInvestmentPerOp.toFixed(2); 
+                        document.getElementById('monthlyOpsTarget').value = Math.round(d.historicalAvgTradesPerMonth); 
+                        showToast('Historical averages loaded as suggestions.', 'info'); 
+                    } else { 
+                        showToast(`Error: ${d.error || 'Unknown'}`, 'error'); 
+                    }
+                })
+                .withFailureHandler(e => { 
+                    hideLoading(); 
+                    showToast(`Server error: ${e.message}`, 'error'); 
+                })
+                .getHistoricalPerformanceAverages(); 
+        }
+
+        // --- RISK ANALYSIS TAB ---
+        function fetchAndRenderRiskData() { 
+            showLoading(); 
+            document.getElementById('noRiskDataMessage').style.display = 'none'; 
+            destroyChart(charts.investmentByAssetTypeChart); 
+            destroyChart(charts.drawdownTimelineChart); 
+            let anDataLoaded=false, ddDataLoaded=false; 
+            const chkHideLoad=()=>{
+                if(anDataLoaded&&ddDataLoaded) {
+                    hideLoading();
+                }
+            }; 
+            google.script.run
+                .withSuccessHandler(rData=>{
+                    anDataLoaded=true;
+                    chkHideLoad();
+                    if(rData&&!rData.error){
+                        updateRiskMetricsUI(rData);
+                        if(rData.investmentByAssetType&&rData.investmentByAssetType.length>0){
+                            renderInvestmentByAssetTypeChart(rData.investmentByAssetType);
+                        } else {
+                            const c=document.getElementById('investmentByAssetTypeChart');
+                            if(c){
+                                const x=c.getContext('2d');
+                                x.clearRect(0,0,c.width,c.height);
+                                x.textAlign="center";
+                                x.fillText("No investment data by asset type.",c.width/2,c.height/2);
+                            }
+                        }
+                    } else {
+                        showToast("Error loading risk metrics: "+(rData?rData.error:"Unknown"),"error");
+                        document.getElementById('noRiskDataMessage').style.display='block';
+                    }
+                })
+                .withFailureHandler(e=>{
+                    anDataLoaded=true;
+                    chkHideLoad();
+                    showToast(`Failed risk metrics: ${e.message}`,'error');
+                    document.getElementById('noRiskDataMessage').style.display='block';
+                })
+                .getAnalyticsData(null); 
+            
+            google.script.run
+                .withSuccessHandler(ddRsp=>{
+                    ddDataLoaded=true;
+                    chkHideLoad();
+                    if(ddRsp&&ddRsp.success&&ddRsp.drawdownSeries){
+                        renderDrawdownTimelineChart(ddRsp.drawdownSeries);
+                    } else {
+                        showToast("Could not load drawdown: "+(ddRsp?(ddRsp.error||ddRsp.message):"Unknown"),"warning");
+                        const c=document.getElementById('drawdownTimelineChart');
+                        if(c){
+                            const x=c.getContext('2d');
+                            x.clearRect(0,0,c.width,c.height);
+                            x.textAlign="center";
+                            x.fillText("No drawdown data.",c.width/2,c.height/2);
+                        }
+                    }
+                })
+                .withFailureHandler(e=>{
+                    ddDataLoaded=true;
+                    chkHideLoad();
+                    showToast(`Failed drawdown: ${e.message}`,'error');
+                })
+                .getDrawdownAnalysisData();
+        }
+        function updateRiskMetricsUI(analytics) { 
+            if(!analytics||analytics.error){
+                const flds=['profitFactorMetricValue','expectancyMetricValue','avgPayoffRatioMetricValue','avgRiskRewardMetricValue','totalNetProfitMetric','avgWinAmountMetric','avgLossAmountMetric','winRateMetric'];
+                flds.forEach(f=>{const el=document.getElementById(f);if(el)el.textContent='N/A';});
+                return;
+            }
+            document.getElementById('profitFactorMetricValue').textContent=analytics.profitFactor!==Infinity?analytics.profitFactor.toFixed(2):'Inf';
+            document.getElementById('expectancyMetricValue').textContent=formatCurrency(analytics.expectancy||0,'EUR');
+            document.getElementById('avgPayoffRatioMetricValue').textContent=analytics.averagePayoffRatio!==Infinity?analytics.averagePayoffRatio.toFixed(2):'Inf';
+            document.getElementById('avgRiskRewardMetricValue').textContent=(analytics.averageRiskRewardRatio||0).toFixed(2);
+            document.getElementById('totalNetProfitMetric').textContent=formatCurrency(analytics.totalNetProfitEUR||0,'EUR');
+            document.getElementById('avgWinAmountMetric').textContent=formatCurrency(analytics.averageWinAmount||0,'EUR');
+            document.getElementById('avgLossAmountMetric').textContent=formatCurrency(analytics.averageLossAmount||0,'EUR');
+            document.getElementById('winRateMetric').textContent=formatPercentage(analytics.winRate||0);
+        }
+        function renderInvestmentByAssetTypeChart(data) { 
+            destroyChart(charts.investmentByAssetTypeChart); 
+            const c=document.getElementById('investmentByAssetTypeChart');
+            if(!c)return;
+            const x=c.getContext('2d');
+            if(!data||data.length===0){
+                x.clearRect(0,0,c.width,c.height);
+                x.textAlign="center";
+                x.fillText("No investment data.",c.width/2,c.height/2);
+                return;
+            }
+            const lbls=data.map(i=>i.assetType);
+            const vals=data.map(i=>i.totalInvestment);
+            const bgClrs=[];
+            const baseClrs=['rgba(255,99,132,0.7)','rgba(54,162,235,0.7)','rgba(255,206,86,0.7)','rgba(75,192,192,0.7)','rgba(153,102,255,0.7)','rgba(255,159,64,0.7)'];
+            for(let i=0;i<lbls.length;i++) {
+                bgClrs.push(baseClrs[i%baseClrs.length]);
+            }
+            charts.investmentByAssetTypeChart=new Chart(x,{
+                type:'doughnut',
+                data:{
+                    labels:lbls,
+                    datasets:[{
+                        label:'Investment (€)',
+                        data:vals,
+                        backgroundColor:bgClrs,
+                        borderColor:bgClrs.map(clr=>clr.replace('0.7','1')),
+                        borderWidth:1
+                    }]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    plugins:{
+                        legend:{position:'top'},
+                        tooltip:{callbacks:{
+                            label:function(ctx){
+                                let l=ctx.label||'';
+                                if(l)l+=': ';
+                                const v=ctx.parsed;
+                                if(v!==null)l+=formatCurrency(v,'EUR');
+                                const tot=ctx.chart.data.datasets[0].data.reduce((a,b)=>a+b,0);
+                                const perc=tot>0?((v/tot)*100).toFixed(1)+'%':'0%';
+                                l+=` (${perc})`;
+                                return l;
+                            }
+                        }}
+                    }
+                }
+            });
+        }
+        function renderDrawdownTimelineChart(drawdownSeries) { 
+            destroyChart(charts.drawdownTimelineChart); 
+            const c=document.getElementById('drawdownTimelineChart');
+            if(!c)return;
+            const x=c.getContext('2d');
+            if(!drawdownSeries||drawdownSeries.length===0){
+                x.clearRect(0,0,c.width,c.height);
+                x.textAlign="center";
+                x.fillText("No drawdown data.",c.width/2,c.height/2);
+                return;
+            }
+            const lbls=drawdownSeries.map(p=>p.date?new Date(p.date).toLocaleDateString(navigator.language||'es-ES',{day:'2-digit',month:'short',year:'2-digit'}):'');
+            const dVals=drawdownSeries.map(p=>(p.drawdownPercentage*100*-1)); // Display as negative percentages
+            charts.drawdownTimelineChart=new Chart(x,{
+                type:'line',
+                data:{
+                    labels:lbls,
+                    datasets:[{
+                        label:'Drawdown (%)',
+                        data:dVals,
+                        borderColor:'var(--danger-color)',
+                        backgroundColor:'rgba(239,68,68,0.1)',
+                        fill:true,
+                        tension:0.1,
+                        borderWidth:1.5,
+                        pointRadius:drawdownSeries.length<150?2:0,
+                        pointHoverRadius:4
+                    }]
+                },
+                options:{
+                    responsive:true,
+                    maintainAspectRatio:false,
+                    scales:{
+                        y:{ticks:{callback:function(v){return v.toFixed(1)+'%'}},title:{display:true,text:'Drawdown Percentage'}},
+                        x:{ticks:{autoSkip:true,maxRotation:0,minRotation:0,maxTicksLimit:drawdownSeries.length>100?10:15}}
+                    },
+                    plugins:{
+                        tooltip:{callbacks:{
+                            label:function(c){
+                                let l=c.dataset.label||'';
+                                if(l)l+=': ';
+                                if(c.parsed.y!==null)l+=c.parsed.y.toFixed(2)+'%';
+                                return l;
+                            }
+                        }}
+                    }
+                }
+            });
+        }
+
+        // --- AI INSIGHTS TAB ---
+        function fetchAIInsights(){ 
+            showLoading(); 
+            google.script.run
+                .withSuccessHandler(data => {
+                    hideLoading();
+                    if (data.error) {
+                        showToast(`AI Error: ${data.error}`, 'error');
+                        document.getElementById('aiComment').textContent = `Error fetching AI forecast: ${data.error}`;
+                        document.getElementById('aiWorst').textContent = 'N/A';
+                        document.getElementById('aiBase').textContent = 'N/A';
+                        document.getElementById('aiBest').textContent = 'N/A';
+                    } else if (data.forecast) { 
+                        document.getElementById('aiWorst').textContent = formatCurrency(data.forecast.worst, 'EUR');
+                        document.getElementById('aiBase').textContent = formatCurrency(data.forecast.base, 'EUR');
+                        document.getElementById('aiBest').textContent = formatCurrency(data.forecast.best, 'EUR');
+                        document.getElementById('aiComment').textContent = data.forecast.comment || "No AI comment available.";
+                        showToast('AI Forecast loaded.', 'success');
+                    } else {
+                         showToast('AI Error: Unexpected forecast data structure.', 'error');
+                         document.getElementById('aiComment').textContent = 'Error: Unexpected forecast data structure.';
+                    }
+
+                    if (data.stats) {
+                        document.getElementById('aiStatsMean').textContent = formatCurrency(data.stats.mean, 'EUR');
+                        document.getElementById('aiStatsStdev').textContent = formatCurrency(data.stats.stdev, 'EUR');
+                        document.getElementById('aiStatsMaxDD').textContent = formatCurrency(data.stats.maxDD, 'EUR');
+                    } else {
+                        document.getElementById('aiStatsMean').textContent = 'N/A';
+                        document.getElementById('aiStatsStdev').textContent = 'N/A';
+                        document.getElementById('aiStatsMaxDD').textContent = 'N/A';
+                    }
+                }) 
+                .withFailureHandler(e => {
+                    hideLoading();
+                    showToast(`AI Fetch Error: ${e.message}`, 'error');
+                    document.getElementById('aiComment').textContent = `Server error fetching AI insights: ${e.message}`;
+                    document.getElementById('aiWorst').textContent = 'N/A';
+                    document.getElementById('aiBase').textContent = 'N/A';
+                    document.getElementById('aiBest').textContent = 'N/A';
+                    document.getElementById('aiStatsMean').textContent = 'N/A';
+                    document.getElementById('aiStatsStdev').textContent = 'N/A';
+                    document.getElementById('aiStatsMaxDD').textContent = 'N/A';
+                }) 
+                .getForecast(); // This should match the server-side function name in Code.gs
+        }
+
+        // --- SETTINGS TAB (Strategies & Asset Types) ---
+        function updateStrategyDropdownsInFormsAndFilters() { 
+            const ddsInfo=[
+                {id:'tradeStrategy',ph:'-- Select Strategy --',oth:true},
+                {id:'editTradeStrategy',ph:'-- Select Strategy --',oth:true},
+                {id:'filterStrategy',ph:'All Strategies',oth:false},
+                {id:'analyticsFilterStrategy',ph:'All Strategies',oth:false}
+            ]; 
+            ddsInfo.forEach(info => {
+                const sel = document.getElementById(info.id);
+                if(!sel) return;
+                const curVal = sel.value;
+                sel.innerHTML = '';
+                const defOpt = document.createElement('option');
+                defOpt.value = "";
+                defOpt.textContent = info.ph;
+                sel.appendChild(defOpt);
+                userDefinedStrategies.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s;
+                    opt.textContent = s;
+                    sel.appendChild(opt);
+                });
+                if(info.oth){
+                    const oOpt = document.createElement('option');
+                    oOpt.value = "Other";
+                    oOpt.textContent = "Other (Specify in Notes)";
+                    sel.appendChild(oOpt);
+                }
+                if(Array.from(sel.options).some(o => o.value === curVal)) {
+                    sel.value = curVal;
+                } else {
+                    sel.value = "";
+                }
+            });
+        }
+        function loadAndDisplayStrategies() { 
+            showLoading();
+            const lm = document.getElementById('loadingStrategiesMsg');
+            if(lm) lm.style.display='block';
+            google.script.run
+                .withSuccessHandler(s => {
+                    hideLoading();
+                    if(lm) lm.style.display='none';
+                    const c = document.getElementById('strategiesListContainer');
+                    c.innerHTML = '';
+                    if(s && s.error){
+                        showToast(`Error: ${s.error}`,'error');
+                        c.innerHTML = `<p class="text-danger">Could not load strategies.</p>`;
+                        userDefinedStrategies = [];
+                        return;
+                    }
+                    userDefinedStrategies = Array.isArray(s) ? s : [];
+                    if(userDefinedStrategies.length === 0) {
+                        c.innerHTML = '<p class="text-muted">No strategies defined.</p>';
+                    } else {
+                        userDefinedStrategies.forEach(sName => {
+                            const iDiv = document.createElement('div');
+                            iDiv.className = 'list-item-management';
+                            iDiv.innerHTML = `<span>${escapeHtml(sName)}</span><button class="btn btn-danger btn-sm btn-delete-item" data-strategy="${escapeHtml(sName)}">&times; Delete</button>`;
+                            c.appendChild(iDiv);
+                        });
+                    }
+                    updateStrategyDropdownsInFormsAndFilters();
+                })
+                .withFailureHandler(e => {
+                    hideLoading();
+                    if(lm) lm.style.display='none';
+                    showToast(`Failed to load strategies: ${e.message}`,'error');
+                })
+                .getUserDefinedStrategies();
+        }
+        function handleAddStrategy() { 
+            const i = document.getElementById('newStrategyName');
+            const n = i.value.trim();
+            if(!n){
+                showToast("Strategy name cannot be empty.","warning");
+                return;
+            }
+            showLoading();
+            google.script.run
+                .withSuccessHandler(r => {
+                    hideLoading();
+                    if(r.success){
+                        showToast(r.message,'success');
+                        i.value = '';
+                        userDefinedStrategies = r.strategies; // Assuming server returns updated list
+                        loadAndDisplayStrategies(); // Refresh list
+                    } else {
+                        showToast(r.message,'error');
+                    }
+                })
+                .withFailureHandler(e => {
+                    hideLoading();
+                    showToast(`Error adding strategy: ${e.message}`,'error');
+                })
+                .addStrategyDefinition(n);
+        }
+        function handleDeleteStrategy(strategyName) { 
+            if(!confirm(`Are you sure you want to delete the strategy "${strategyName}"?`)) return;
+            showLoading();
+            google.script.run
+                .withSuccessHandler(r => {
+                    hideLoading();
+                    if(r.success){
+                        showToast(r.message,'success');
+                        userDefinedStrategies = r.strategies; // Assuming server returns updated list
+                        loadAndDisplayStrategies(); // Refresh list
+                    } else {
+                        showToast(r.message,'error');
+                    }
+                })
+                .withFailureHandler(e => {
+                    hideLoading();
+                    showToast(`Error deleting strategy: ${e.message}`,'error');
+                })
+                .deleteStrategyDefinition(strategyName);
+        }
+        function updateAssetTypeDropdownsInFormsAndFilters() { 
+            const ddsInfo=[
+                {id:'tradeAssetType',ph:'-- Select Asset Type --',oth:true},
+                {id:'editTradeAssetType',ph:'-- Select Asset Type --',oth:true},
+                {id:'filterAssetType',ph:'All Asset Types',oth:false},
+                {id:'analyticsFilterAssetType',ph:'All Asset Types',oth:false}
+            ]; 
+            ddsInfo.forEach(info => {
+                const sel = document.getElementById(info.id);
+                if(!sel) return;
+                const curVal = sel.value;
+                sel.innerHTML = '';
+                const defOpt = document.createElement('option');
+                defOpt.value = "";
+                defOpt.textContent = info.ph;
+                sel.appendChild(defOpt);
+                userDefinedAssetTypes.forEach(at => {
+                    const opt = document.createElement('option');
+                    opt.value = at;
+                    opt.textContent = at;
+                    sel.appendChild(opt);
+                });
+                if(info.oth){
+                    const oOpt = document.createElement('option');
+                    oOpt.value = "Other";
+                    oOpt.textContent = "Other (Specify in Notes)";
+                    sel.appendChild(oOpt);
+                }
+                if(Array.from(sel.options).some(o => o.value === curVal)) {
+                    sel.value = curVal;
+                } else {
+                    sel.value = "";
+                }
+            });
+        }
+        function loadAndDisplayAssetTypes() { 
+            showLoading();
+            const lm = document.getElementById('loadingAssetTypesMsg');
+            if(lm) lm.style.display='block';
+            google.script.run
+                .withSuccessHandler(ats => {
+                    hideLoading();
+                    if(lm) lm.style.display='none';
+                    const c = document.getElementById('assetTypesListContainer');
+                    c.innerHTML = '';
+                    if(ats && ats.error){
+                        showToast(`Error: ${ats.error}`,'error');
+                        c.innerHTML = `<p class="text-danger">Could not load asset types.</p>`;
+                        userDefinedAssetTypes = [];
+                        return;
+                    }
+                    userDefinedAssetTypes = Array.isArray(ats) ? ats : [];
+                    if(userDefinedAssetTypes.length === 0) {
+                        c.innerHTML = '<p class="text-muted">No asset types defined.</p>';
+                    } else {
+                        userDefinedAssetTypes.forEach(atName => {
+                            const iDiv = document.createElement('div');
+                            iDiv.className = 'list-item-management';
+                            iDiv.innerHTML = `<span>${escapeHtml(atName)}</span><button class="btn btn-danger btn-sm btn-delete-item" data-asset-type="${escapeHtml(atName)}">&times; Delete</button>`;
+                            c.appendChild(iDiv);
+                        });
+                    }
+                    updateAssetTypeDropdownsInFormsAndFilters();
+                })
+                .withFailureHandler(e => {
+                    hideLoading();
+                    if(lm) lm.style.display='none';
+                    showToast(`Failed to load asset types: ${e.message}`,'error');
+                })
+                .getUserDefinedAssetTypes();
+        }
+        function handleAddAssetType() { 
+            const i = document.getElementById('newAssetTypeName');
+            const n = i.value.trim();
+            if(!n){
+                showToast("Asset type name cannot be empty.","warning");
+                return;
+            }
+            showLoading();
+            google.script.run
+                .withSuccessHandler(r => {
+                    hideLoading();
+                    if(r.success){
+                        showToast(r.message,'success');
+                        i.value = '';
+                        userDefinedAssetTypes = r.assetTypes; // Assuming server returns updated list
+                        loadAndDisplayAssetTypes(); // Refresh list
+                    } else {
+                        showToast(r.message,'error');
+                    }
+                })
+                .withFailureHandler(e => {
+                    hideLoading();
+                    showToast(`Error adding asset type: ${e.message}`,'error');
+                })
+                .addAssetTypeDefinition(n);
+        }
+        function handleDeleteAssetType(assetTypeName) { 
+            if(!confirm(`Are you sure you want to delete the asset type "${assetTypeName}"?`)) return;
+            showLoading();
+            google.script.run
+                .withSuccessHandler(r => {
+                    hideLoading();
+                    if(r.success){
+                        showToast(r.message,'success');
+                        userDefinedAssetTypes = r.assetTypes; // Assuming server returns updated list
+                        loadAndDisplayAssetTypes(); // Refresh list
+                    } else {
+                        showToast(r.message,'error');
+                    }
+                })
+                .withFailureHandler(e => {
+                    hideLoading();
+                    showToast(`Error deleting asset type: ${e.message}`,'error');
+                })
+                .deleteAssetTypeDefinition(assetTypeName);
+        }
+
+        // --- DOMCONTENTLOADED ---
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('navDashboard').addEventListener('click', (e) => { e.preventDefault(); showView('dashboardView'); });
+            document.getElementById('navManagement').addEventListener('click', (e) => { e.preventDefault(); showView('managementView'); });
+            document.getElementById('navAnalytics').addEventListener('click', (e) => { e.preventDefault(); showView('analyticsView'); });
+            document.getElementById('navForecasting').addEventListener('click', (e) => { e.preventDefault(); showView('forecastingView'); });
+            document.getElementById('navRisk').addEventListener('click', (e) => { e.preventDefault(); showView('riskView'); });
+            document.getElementById('navAi').addEventListener('click', (e) => { e.preventDefault(); showView('aiView');});
+            document.getElementById('navSettings').addEventListener('click', (e) => { e.preventDefault(); showView('settingsView');});
+            
+            const addTradeFormEl = document.getElementById('addTradeForm');
+            if(addTradeFormEl) {
+                addTradeFormEl.addEventListener('submit', (e) => { e.preventDefault(); submitTrade(); });
+            }
+            
+            const dashboardAddNewTradeBtnEl = document.getElementById('dashboardAddNewTradeBtn');
+            if(dashboardAddNewTradeBtnEl) {
+                dashboardAddNewTradeBtnEl.addEventListener('click', () => { 
+                    showView('managementView'); 
+                    const tradeSymbolEl = document.getElementById('tradeSymbol');
+                    if(tradeSymbolEl) {
+                        tradeSymbolEl.focus(); 
+                    }
+                });
+            }
+
+            const dashboardRefreshBtnEl = document.getElementById('dashboardRefreshBtn');
+            if(dashboardRefreshBtnEl) {
+                dashboardRefreshBtnEl.addEventListener('click', () => fetchAndDisplayDashboardData(currentDashboardTimeframe));
+            }
+            
+            const timeframeButtons = document.querySelectorAll('#equityCurveTimeframeSelector .btn'); 
+            timeframeButtons.forEach(button => { 
+                button.addEventListener('click', function() { 
+                    timeframeButtons.forEach(btn => btn.classList.remove('active')); 
+                    this.classList.add('active'); 
+                    fetchAndDisplayDashboardData(this.dataset.timeframe); 
+                }); 
+            });
+            
+            const dashboardRecentTradesTableBody = document.getElementById('dashboardRecentTradesTableBody'); 
+            if (dashboardRecentTradesTableBody) { 
+                dashboardRecentTradesTableBody.addEventListener('click', function(event) { 
+                    const clickedRow = event.target.closest('tr.clickable-trade-row'); 
+                    if (clickedRow && clickedRow.dataset.tradeId) { 
+                        const tradeId = clickedRow.dataset.tradeId; 
+                        if (tradeId && tradeId !== 'null' && tradeId !== 'undefined') { 
+                            showToast(`Loading trade ID: ${tradeId}...`, 'info'); 
+                            showView('managementView'); 
+                            if (typeof window.initiateEditTrade === 'function') { 
+                                window.initiateEditTrade(tradeId); 
+                            } else { 
+                                console.error("initiateEditTrade function not found."); 
+                                showToast("Could not open trade details.", "error");
+                            }
+                        }
+                    }
+                }); 
+            }
+            
+            const applyFiltersBtnEl = document.getElementById('applyFiltersBtn');
+            if(applyFiltersBtnEl) {
+                applyFiltersBtnEl.addEventListener('click', filterAndDisplayTrades);
+            }
+
+            const resetFiltersBtnEl = document.getElementById('resetFiltersBtn');
+            if(resetFiltersBtnEl) {
+                resetFiltersBtnEl.addEventListener('click', () => { 
+                    const filterTradesFormEl = document.getElementById('filterTradesForm');
+                    if(filterTradesFormEl) {
+                        filterTradesFormEl.reset(); 
+                    }
+                    clearSelectionsAndToolbar(); 
+                    updateTradesTable(allTrades); 
+                });
+            }
+            
+            const selectAllCheckbox = document.getElementById('selectAllTradesCheckbox'); 
+            const tradesTableBodyEl = document.getElementById('tradesTableBody'); 
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn'); 
+            const bulkDeselectAllBtn = document.getElementById('bulkDeselectAllBtn');
+            
+            if (selectAllCheckbox && tradesTableBodyEl) { 
+                selectAllCheckbox.addEventListener('change', function() { 
+                    const isChecked = this.checked; 
+                    const visibleCheckboxes = tradesTableBodyEl.querySelectorAll('.trade-row-checkbox'); 
+                    visibleCheckboxes.forEach(checkbox => { 
+                        checkbox.checked = isChecked; 
+                        const tradeId = checkbox.dataset.tradeId; 
+                        if (isChecked) { 
+                            selectedTradeIds.add(tradeId); 
+                        } else { 
+                            selectedTradeIds.delete(tradeId); 
+                        }
+                    }); 
+                    updateBulkActionToolbar(); 
+                }); 
+            }
+            if (tradesTableBodyEl) { 
+                tradesTableBodyEl.addEventListener('change', function(event) { 
+                    if (event.target.classList.contains('trade-row-checkbox')) { 
+                        const checkbox = event.target; 
+                        const tradeId = checkbox.dataset.tradeId; 
+                        if (checkbox.checked) { 
+                            selectedTradeIds.add(tradeId); 
+                        } else { 
+                            selectedTradeIds.delete(tradeId); 
+                        } 
+                        updateBulkActionToolbar(); 
+                    }
+                }); 
+            }
+            if (bulkDeleteBtn) { 
+                bulkDeleteBtn.addEventListener('click', () => { 
+                    if (selectedTradeIds.size === 0) { 
+                        showToast("No trades selected.", "info"); 
+                        return; 
+                    } 
+                    if (confirm(`Delete ${selectedTradeIds.size} selected trades?`)) { 
+                        showLoading(); 
+                        google.script.run
+                            .withSuccessHandler(r => { 
+                                hideLoading(); 
+                                if (r.success) { 
+                                    showToast(r.message, 'success'); 
+                                    selectedTradeIds.clear(); 
+                                    fetchAllData(); 
+                                } else { 
+                                    showToast(`Bulk delete failed: ${r.message}`, 'error'); 
+                                }
+                            })
+                            .withFailureHandler(e => { 
+                                hideLoading(); 
+                                showToast(`Server error: ${e.message}`, 'error'); 
+                            })
+                            .bulkDeleteTrades(Array.from(selectedTradeIds)); 
+                    }
+                }); 
+            }
+            if (bulkDeselectAllBtn) { 
+                bulkDeselectAllBtn.addEventListener('click', () => { 
+                    if(tradesTableBodyEl) {
+                        tradesTableBodyEl.querySelectorAll('.trade-row-checkbox:checked').forEach(cb => cb.checked = false); 
+                    }
+                    if(selectAllCheckbox) {
+                        selectAllCheckbox.checked = false; 
+                    }
+                    selectedTradeIds.clear(); 
+                    updateBulkActionToolbar(); 
+                }); 
+            }
+            
+            const importCsvBtn = document.getElementById('importCsvBtn'); 
+            const csvFileInput = document.getElementById('csvFileInput'); 
+            if (importCsvBtn && csvFileInput) { 
+                importCsvBtn.addEventListener('click', () => csvFileInput.click()); 
+                csvFileInput.addEventListener('change', (event) => { 
+                    const file = event.target.files[0]; 
+                    if (!file) return; 
+                    showLoading(); 
+                    const reader = new FileReader(); 
+                    reader.onload = (e) => { 
+                        google.script.run
+                            .withSuccessHandler(processImportResult)
+                            .withFailureHandler(processImportError)
+                            .importTradesFromCSV(e.target.result); 
+                    }; 
+                    reader.onerror = (e) => { 
+                        hideLoading(); 
+                        showToast('Error reading CSV file.', 'error');
+                    }; 
+                    reader.readAsText(file); 
+                    csvFileInput.value = null; // Reset file input
+                });
+            }
+
+            const downloadCsvTemplateBtn = document.getElementById('downloadCsvTemplateBtn'); 
+            if (downloadCsvTemplateBtn) { 
+                downloadCsvTemplateBtn.addEventListener('click', () => { 
+                    showLoading(); 
+                    google.script.run
+                        .withSuccessHandler(processCsvTemplateHeaders)
+                        .withFailureHandler(processCsvTemplateError)
+                        .getCSVTemplateHeaders(); 
+                }); 
+            }
+            
+            const applyAnalyticsBtn = document.getElementById('applyAnalyticsFiltersBtn'); 
+            const resetAnalyticsBtn = document.getElementById('resetAnalyticsFiltersBtn'); 
+            const analyticsDatePresetsDiv = document.getElementById('analyticsDatePresets'); 
+            const analyticsDateStartInput = document.getElementById('analyticsFilterDateStart'); 
+            const analyticsDateEndInput = document.getElementById('analyticsFilterDateEnd');
+            
+            const clearAnalyticsPresetActiveState = () => { 
+                if(analyticsDatePresetsDiv) {
+                    analyticsDatePresetsDiv.querySelectorAll('button').forEach(btn => btn.classList.remove('active')); 
+                }
+            };
+
+            if(applyAnalyticsBtn) { 
+                applyAnalyticsBtn.addEventListener('click', () => { 
+                    clearAnalyticsPresetActiveState(); 
+                    const symbolInput = document.getElementById('analyticsFilterSymbol').value.trim(); 
+                    let symbolsArray = null; 
+                    if (symbolInput) { 
+                        symbolsArray = symbolInput.split(',').map(s => s.trim().toUpperCase()).filter(s => s !== ''); 
+                        if (symbolsArray.length === 0) {
+                            symbolsArray = null; 
+                        }
+                    } 
+                    const filters = { 
+                        dateStart: document.getElementById('analyticsFilterDateStart').value || null, 
+                        dateEnd: document.getElementById('analyticsFilterDateEnd').value || null, 
+                        symbols: symbolsArray, 
+                        strategy: document.getElementById('analyticsFilterStrategy').value || null, 
+                        assetType: document.getElementById('analyticsFilterAssetType').value || null 
+                    }; 
+                    Object.keys(filters).forEach(key => (filters[key] == null || (Array.isArray(filters[key]) && filters[key].length === 0)) && delete filters[key]); 
+                    fetchAndRenderAnalytics(Object.keys(filters).length > 0 ? filters : null); 
+                }); 
+            }
+            if(resetAnalyticsBtn) { 
+                resetAnalyticsBtn.addEventListener('click', () => { 
+                    const analyticsFilterFormEl = document.getElementById('analyticsFilterForm');
+                    if (analyticsFilterFormEl) {
+                        analyticsFilterFormEl.reset(); 
+                    }
+                    clearAnalyticsPresetActiveState(); 
+                    fetchAndRenderAnalytics(null); 
+                }); 
+            }
+            if(analyticsDatePresetsDiv) { 
+                analyticsDatePresetsDiv.addEventListener('click', (event) => { 
+                    const targetButton = event.target.closest('button[data-preset]'); 
+                    if (!targetButton) return; 
+                    
+                    analyticsDatePresetsDiv.querySelectorAll('button').forEach(btn => btn.classList.remove('active')); 
+                    targetButton.classList.add('active'); 
+                    
+                    const preset = targetButton.dataset.preset; 
+                    const today = new Date(); 
+                    let startDate, endDate = new Date(today); 
+                    
+                    switch (preset) { 
+                        case '7D': startDate = new Date(today); startDate.setDate(today.getDate() - 6); break; 
+                        case '30D': startDate = new Date(today); startDate.setDate(today.getDate() - 29); break; 
+                        case 'MTD': startDate = new Date(today.getFullYear(), today.getMonth(), 1); break; 
+                        case 'YTD': startDate = new Date(today.getFullYear(), 0, 1); break; 
+                        case 'ALL': startDate = null; endDate = null; break; 
+                        default: return; 
+                    } 
+                    if (analyticsDateStartInput) analyticsDateStartInput.value = startDate ? formatDateForInput(startDate) : ''; 
+                    if (analyticsDateEndInput) analyticsDateEndInput.value = endDate ? formatDateForInput(endDate) : ''; 
+                    if(applyAnalyticsBtn) applyAnalyticsBtn.click(); 
+                }); 
+            }
+            if(analyticsDateStartInput) analyticsDateStartInput.addEventListener('change', clearAnalyticsPresetActiveState);
+            if(analyticsDateEndInput) analyticsDateEndInput.addEventListener('change', clearAnalyticsPresetActiveState);
+            
+            const filteredYearSelector = document.getElementById('analyticsFilteredYearSelector'); 
+            if (filteredYearSelector) { 
+                filteredYearSelector.addEventListener('change', function() { 
+                    if (allAnalyticsData.years && allAnalyticsData.years.length > 0 && this.value && this.value !== "No Data") { 
+                        renderAnalyticsCharts(this.value); 
+                    } else { 
+                        // Clear year-specific charts if no valid year is selected
+                        destroyChart(charts.performanceChart);
+                        destroyChart(charts.successFailChart);
+                        destroyChart(charts.priceRangePerformanceChart);
+                        destroyChart(charts.monthlyInvestmentChart);
+                    } 
+                }); 
+            }
+            
+            const goalsFormEl = document.getElementById('goalsForm');
+            if(goalsFormEl) {
+                goalsFormEl.addEventListener('submit', (e) => { e.preventDefault(); saveAndCalculateProjections(); });
+            }
+
+            const loadHistoricalAveragesBtnEl = document.getElementById('loadHistoricalAveragesBtn');
+            if(loadHistoricalAveragesBtnEl) {
+                loadHistoricalAveragesBtnEl.addEventListener('click', loadHistoricalAverages);
+            }
+            
+            const addStrategyBtn = document.getElementById('addStrategyBtn'); 
+            const strategiesListContainer = document.getElementById('strategiesListContainer'); 
+            if (addStrategyBtn) {
+                addStrategyBtn.addEventListener('click', handleAddStrategy); 
+            }
+            if (strategiesListContainer) {
+                strategiesListContainer.addEventListener('click', (event) => { 
+                    if (event.target && event.target.classList.contains('btn-delete-item') && event.target.dataset.strategy) {
+                        handleDeleteStrategy(event.target.dataset.strategy); 
+                    }
+                }); 
+            }
+            
+            const addAssetTypeBtn = document.getElementById('addAssetTypeBtn'); 
+            const assetTypesListContainer = document.getElementById('assetTypesListContainer'); 
+            if (addAssetTypeBtn) {
+                addAssetTypeBtn.addEventListener('click', handleAddAssetType); 
+            }
+            if (assetTypesListContainer) {
+                assetTypesListContainer.addEventListener('click', (event) => { 
+                    if (event.target && event.target.classList.contains('btn-delete-item') && event.target.dataset.assetType) {
+                        handleDeleteAssetType(event.target.dataset.assetType); 
+                    }
+                }); 
+            }
+            
+            const tradeDateInEl = document.getElementById('tradeDateIn');
+            if(tradeDateInEl) {
+                tradeDateInEl.valueAsDate = new Date(); 
+            }
+            
+            fetchAllData(); 
+            showView('dashboardView'); 
+            
+            if (window.jQuery && window.jQuery.fn.collapse) { 
+                $('.navbar-collapse').collapse('hide'); 
+            }
+        });
+        
+        // Expose functions to global scope if called by HTML onclick (already done for most)
+        window.fetchAllData = fetchAllData; 
+        window.exportTrades = exportTrades;
+        window.clearAddTradeForm = clearAddTradeForm;
+        window.initiateEditTrade = initiateEditTrade;
+        window.submitTradeUpdate = submitTradeUpdate;
+        window.deleteTradeClicked = deleteTradeClicked;
+        window.loadUserGoalsAndPopulateForm = loadUserGoalsAndPopulateForm;
+    })(); 
+    </script>
+</body>
+</html>
